@@ -61,12 +61,9 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
     @Transactional
     public void removeMemberFromParche(UUID parcheId, UUID memberId, UUID requesterId) {
         Parche parche = parcheRepository.findById(parcheId).orElseThrow(() -> new ParcheNotFoundException(parcheId));
-
-        // Authorization first: never leak membership info to non-owners.
         if (!parche.isOwnedBy(requesterId)){
             throw new NotParcheOwnerException(parcheId, requesterId);
         }
-        // The owner cannot be expelled from their own parche.
         if (parche.isOwnedBy(memberId)){
             throw new CannotRemoveOwnerException(parcheId);
         }

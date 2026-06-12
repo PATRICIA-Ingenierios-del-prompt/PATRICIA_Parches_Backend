@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
-
     public static final String PARCHE_EXCHANGE = "parche.events";
 
     public static final String PARCHE_CREATED_ROUTING_KEY = "parche.created";

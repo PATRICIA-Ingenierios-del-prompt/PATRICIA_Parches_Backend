@@ -49,9 +49,6 @@ public class InviteService implements InviteUserCase {
     public void acceptInvite(String inviteToken, UUID acceptingUserId) {
         UUID parcheId = inviteRepositoryOutPort.findParcheIdByToken(inviteToken).orElseThrow(InvalidInviteTokenException::new);
         Parche parche = parcheRepositoryOutPort.findById(parcheId).orElseThrow(() -> new ParcheNotFoundException(parcheId));
-
-        // Idempotency: if user is already a member, do nothing.
-        // The token is NOT deleted here — it stays valid (multi-use) until TTL.
         if (parche.hasMember(acceptingUserId)) {
             return;
         }

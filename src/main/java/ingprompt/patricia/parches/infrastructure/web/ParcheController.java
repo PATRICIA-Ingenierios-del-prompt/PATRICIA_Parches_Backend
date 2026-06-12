@@ -42,6 +42,4 @@ public class ParcheController {
         serviceManageMemberParcheCase.removeMemberFromParche(parcheId, memberId, requesterId);
         return ResponseEntity.noContent().build();
     }
-
-
 }
