@@ -14,7 +14,6 @@ import java.util.UUID;
 @Component
 @AllArgsConstructor
 public class ParcheEventPublisherAdapter implements ParcheEventPublisherOut {
-
     private static final String MEMBER_JOINED_ROUTING_KEY = "parche.member.joined";
     private static final String MEMBER_EXPELLED_ROUTING_KEY = "parche.member.expelled";
 

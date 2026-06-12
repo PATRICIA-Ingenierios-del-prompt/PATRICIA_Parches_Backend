@@ -1,5 +1,6 @@
 package ingprompt.patricia.parches.infrastructure.web;
 
+import ingprompt.patricia.parches.application.port.in.ManageMemberParcheCase;
 import ingprompt.patricia.parches.application.port.in.ManageParcheCase;
 import ingprompt.patricia.parches.domain.model.Parche;
 import ingprompt.patricia.parches.infrastructure.web.dto.request.CreateParcheRequest;
@@ -15,6 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ParcheController {
     private final ManageParcheCase serviceManageParche;
+    private final ManageMemberParcheCase serviceManageMemberParcheCase;
 
     @PostMapping
     public ResponseEntity<CreateParcheResponse> createParche(@RequestBody CreateParcheRequest request, @RequestHeader("X-User-Id") UUID ownerId) {
@@ -28,4 +30,18 @@ public class ParcheController {
         serviceManageParche.deleteParche(parcheId, ownerId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{parcheId}/join")
+    public ResponseEntity<Void> joinParche(@PathVariable UUID parcheId, @RequestHeader("X-User-Id") UUID userId) {
+        serviceManageMemberParcheCase.joinPublicParche(parcheId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{parcheId}/members/{memberId}")
+    public ResponseEntity<Void> deleteMember(@PathVariable UUID parcheId, @PathVariable UUID memberId, @RequestHeader("X-User-Id") UUID requesterId){
+        serviceManageMemberParcheCase.removeMemberFromParche(parcheId, memberId, requesterId);
+        return ResponseEntity.noContent().build();
+    }
+
+
 }

@@ -7,8 +7,6 @@ import java.util.UUID;
 
 public interface ParcheRepositoryOutPort {
     void save(Parche parche);
-
     void delete(Parche parche);
-
     Optional<Parche> findById(UUID parcheId);
 }

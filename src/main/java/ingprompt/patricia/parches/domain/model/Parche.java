@@ -45,6 +45,9 @@ public class Parche {
     public void addMember(UUID memberId) {
         members.add(memberId);
     }
+    public void deleteMember(UUID memberId){
+        members.remove(memberId);
+    }
 
     public void addEvent(UUID eventId) {
         events.add(eventId);
@@ -70,6 +73,22 @@ public class Parche {
 
     public boolean isOwnedBy(UUID userId) {
         return this.ownerId.equals(userId);
+    }
+
+    public boolean isPublic() {
+        return this.visibility == Visibility.PUBLIC;
+    }
+
+    public boolean isPrivate() {
+        return this.visibility == Visibility.PRIVATE;
+    }
+
+    public boolean isFull() {
+        return this.members.size() >= this.maxCapacity;
+    }
+
+    public boolean hasMember(UUID userId) {
+        return this.members.contains(userId);
     }
 
     private void refreshStatus() {

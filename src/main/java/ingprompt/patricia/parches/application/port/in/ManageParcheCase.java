@@ -9,5 +9,4 @@ import java.util.UUID;
 public interface ManageParcheCase {
     Parche createParche(String name, ParcheCategory category, int num, UUID ownerId, String description, Visibility visibility);
     void deleteParche (UUID parcheId, UUID ownerId);
-
 }
