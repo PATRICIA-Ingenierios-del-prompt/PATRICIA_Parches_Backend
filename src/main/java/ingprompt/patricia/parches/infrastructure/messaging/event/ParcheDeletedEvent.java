@@ -7,11 +7,6 @@ import lombok.NoArgsConstructor;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Outbound: published when a Parche is deleted. {@code eventIds} carries the
- * snapshot of linked events at the moment of deletion so consumers
- * (notably the Event MS) can cascade-delete without re-querying.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

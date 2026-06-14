@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
-
     // ---------- Outbound exchange (owned by this service) ----------
     public static final String PARCHE_EXCHANGE = "parche.events";
 

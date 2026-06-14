@@ -6,9 +6,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
-/**
- * Inbound: published by the Event MS when an event is created and linked to a parche.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
