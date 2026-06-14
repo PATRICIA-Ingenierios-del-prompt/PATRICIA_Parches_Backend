@@ -53,6 +53,10 @@ public class Parche {
         events.add(eventId);
     }
 
+    public void removeEvent(UUID eventId) {
+        events.remove(eventId);
+    }
+
     public void assignCommunication(UUID chatId, UUID voiceId) {
         this.communication.setChatId(chatId);
         this.communication.setVoiceId(voiceId);
