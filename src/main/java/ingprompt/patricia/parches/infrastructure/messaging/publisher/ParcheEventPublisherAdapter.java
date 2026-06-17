@@ -3,12 +3,14 @@ package ingprompt.patricia.parches.infrastructure.messaging.publisher;
 import ingprompt.patricia.parches.application.port.out.ParcheEventPublisherOut;
 import ingprompt.patricia.parches.infrastructure.messaging.config.RabbitMQConfig;
 import ingprompt.patricia.parches.infrastructure.messaging.event.ParcheCreatedEvent;
+import ingprompt.patricia.parches.infrastructure.messaging.event.ParcheDeletedEvent;
 import ingprompt.patricia.parches.infrastructure.messaging.event.ParcheMemberExpelledEvent;
 import ingprompt.patricia.parches.infrastructure.messaging.event.ParcheMemberJoinedEvent;
 import lombok.AllArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
 import java.util.UUID;
 
 @Component
@@ -32,5 +34,10 @@ public class ParcheEventPublisherAdapter implements ParcheEventPublisherOut {
     @Override
     public void publishParcheMemberExpelled(UUID parcheId, UUID memberId) {
         rabbitTemplate.convertAndSend(RabbitMQConfig.PARCHE_EXCHANGE, MEMBER_EXPELLED_ROUTING_KEY, new ParcheMemberExpelledEvent(parcheId, memberId));
+    }
+
+    @Override
+    public void publishParcheDeleted(UUID parcheId, UUID ownerId, Set<UUID> eventIds) {
+        rabbitTemplate.convertAndSend(RabbitMQConfig.PARCHE_EXCHANGE, RabbitMQConfig.PARCHE_DELETED_ROUTING_KEY, new ParcheDeletedEvent(parcheId, ownerId, eventIds));
     }
 }
