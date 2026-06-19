@@ -11,11 +11,8 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PictureUploadResponse {
-    /** POST the multipart form here (fields first, the "file" part last). */
     private String uploadUrl;
-    /** Form fields to include before the file part. */
     private Map<String, String> fields;
-    /** Send this back as pictureUrl when creating the parche. */
     private String publicUrl;
     private String objectKey;
 
