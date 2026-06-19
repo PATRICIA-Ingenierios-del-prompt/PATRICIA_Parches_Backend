@@ -7,6 +7,6 @@ import ingprompt.patricia.parches.domain.model.Parche;
 import java.util.UUID;
 
 public interface ManageParcheCase {
-    Parche createParche(String name, ParcheCategory category, int num, UUID ownerId, String description, Visibility visibility);
+    Parche createParche(String name, ParcheCategory category, int num, UUID ownerId, String description, Visibility visibility, String pictureUrl);
     void deleteParche (UUID parcheId, UUID ownerId);
 }

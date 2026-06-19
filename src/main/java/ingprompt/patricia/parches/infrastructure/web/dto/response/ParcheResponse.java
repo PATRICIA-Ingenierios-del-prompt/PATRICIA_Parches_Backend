@@ -19,6 +19,7 @@ public class ParcheResponse {
     private ParcheStatus status;
     private int maxCapacity;
     private int memberCount;
+    private String pictureUrl;
 
     public static ParcheResponse from(Parche parche) {
         return new ParcheResponse(
@@ -28,7 +29,8 @@ public class ParcheResponse {
                 parche.getVisibility(),
                 parche.getStatus(),
                 parche.getMaxCapacity(),
-                parche.getMembers().size()
+                parche.getMembers().size(),
+                parche.getPictureUrl()
         );
     }
 }

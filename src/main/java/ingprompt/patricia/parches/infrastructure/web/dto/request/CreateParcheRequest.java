@@ -15,4 +15,5 @@ public class CreateParcheRequest {
     private ParcheCategory category;
     private int maxCapacity;
     private Visibility visibility;
+    private String pictureUrl;
 }

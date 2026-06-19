@@ -30,8 +30,9 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
 
     @Override
     @Transactional
-    public Parche createParche(String name, ParcheCategory category, int num, UUID ownerId, String description, Visibility visibility) {
+    public Parche createParche(String name, ParcheCategory category, int num, UUID ownerId, String description, Visibility visibility, String pictureUrl) {
         Parche parche = new Parche(UUID.randomUUID(), name, category, num, ownerId, description, visibility);
+        parche.setPictureUrl(pictureUrl);
         parcheRepository.save(parche);
         eventPublisher.publishParcheWasCreated(parche.getParcheId(), parche.getOwnerId());
         return parche;

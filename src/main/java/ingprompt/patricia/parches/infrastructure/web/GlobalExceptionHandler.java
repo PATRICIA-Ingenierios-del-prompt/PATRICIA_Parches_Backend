@@ -2,6 +2,7 @@ package ingprompt.patricia.parches.infrastructure.web;
 
 import ingprompt.patricia.parches.domain.exception.CannotRemoveOwnerException;
 import ingprompt.patricia.parches.domain.exception.InvalidInviteTokenException;
+import ingprompt.patricia.parches.domain.exception.InvalidPictureUploadException;
 import ingprompt.patricia.parches.domain.exception.MemberNotFoundInParche;
 import ingprompt.patricia.parches.domain.exception.NotParcheOwnerException;
 import ingprompt.patricia.parches.domain.exception.ParcheFullException;
@@ -46,6 +47,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ParcheFullException.class)
     public ResponseEntity<Map<String, String>> handleFull(ParcheFullException ex) {
         return error(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidPictureUploadException.class)
+    public ResponseEntity<Map<String, String>> handleBadPicture(InvalidPictureUploadException ex) {
+        return error(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     private ResponseEntity<Map<String, String>> error(HttpStatus status, String message) {

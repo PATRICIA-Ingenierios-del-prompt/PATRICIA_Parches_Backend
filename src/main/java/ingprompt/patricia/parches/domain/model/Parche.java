@@ -19,6 +19,7 @@ public class Parche {
     private Visibility visibility;
     private int maxCapacity;
     private ParcheStatus status;
+    private String pictureUrl;
     private Set<UUID> members;
 
     private Set<UUID> events;
