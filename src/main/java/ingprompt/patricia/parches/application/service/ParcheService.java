@@ -7,9 +7,12 @@ import ingprompt.patricia.parches.application.port.in.ParcheProvisioningCase;
 import ingprompt.patricia.parches.application.port.in.ParcheQueryCase;
 import ingprompt.patricia.parches.application.port.out.ParcheEventPublisherOut;
 import ingprompt.patricia.parches.application.port.out.ParcheRepositoryOutPort;
+import ingprompt.patricia.parches.application.service.concurrency.OptimisticRetryExecutor;
 import ingprompt.patricia.parches.domain.enums.ParcheCategory;
 import ingprompt.patricia.parches.domain.enums.Visibility;
 import ingprompt.patricia.parches.domain.exception.*;
+import ingprompt.patricia.parches.domain.model.CollaborationTools;
+import ingprompt.patricia.parches.domain.model.CommunicationChannels;
 import ingprompt.patricia.parches.domain.model.Parche;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -27,6 +31,7 @@ import java.util.UUID;
 public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, ManageMemberParcheCase, LinkEventToParcheCase, ParcheQueryCase {
     private final ParcheRepositoryOutPort parcheRepository;
     private final ParcheEventPublisherOut eventPublisher;
+    private final OptimisticRetryExecutor retryExecutor;
 
     @Override
     @Transactional
@@ -37,6 +42,7 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
         eventPublisher.publishParcheWasCreated(parche.getParcheId(), parche.getOwnerId());
         return parche;
     }
+
     @Override
     @Transactional
     public void deleteParche(UUID parcheId, UUID ownerId) {
@@ -51,8 +57,11 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
     }
 
     @Override
-    @Transactional
     public void joinPublicParche(UUID parcheId, UUID userId) {
+        retryExecutor.runRetrying(parcheId, () -> doJoinPublicParche(parcheId, userId));
+    }
+
+    private void doJoinPublicParche(UUID parcheId, UUID userId) {
         Parche parche = parcheRepository.findById(parcheId).orElseThrow(() -> new ParcheNotFoundException(parcheId));
         if (parche.isPrivate()) {
             throw new ParcheIsPrivateException(parcheId);
@@ -68,9 +77,13 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
         parcheRepository.save(parche);
         eventPublisher.publishNewParcheMember(parcheId, userId);
     }
+
     @Override
-    @Transactional
     public void removeMemberFromParche(UUID parcheId, UUID memberId, UUID requesterId) {
+        retryExecutor.runRetrying(parcheId, () -> doRemoveMember(parcheId, memberId, requesterId));
+    }
+
+    private void doRemoveMember(UUID parcheId, UUID memberId, UUID requesterId) {
         Parche parche = parcheRepository.findById(parcheId).orElseThrow(() -> new ParcheNotFoundException(parcheId));
         if (!parche.isOwnedBy(requesterId)) {
             throw new NotParcheOwnerException(parcheId, requesterId);
@@ -91,6 +104,12 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
     @Transactional
     public void assignCommunicationChannels(UUID parcheId, UUID chatId, UUID voiceId) {
         Parche parche = parcheRepository.findById(parcheId).orElseThrow(() -> new ParcheNotFoundException(parcheId));
+        CommunicationChannels current = parche.getCommunication();
+        if (current != null && Objects.equals(current.getChatId(), chatId) && Objects.equals(current.getVoiceId(), voiceId)) {
+            log.debug("Communication channels already set for parche {}; skipping", parcheId);
+            return;
+        }
+
         parche.assignCommunication(chatId, voiceId);
         parcheRepository.save(parche);
     }
@@ -99,6 +118,12 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
     @Transactional
     public void assignCollaborationTools(UUID parcheId, UUID parquesId, UUID canvasId) {
         Parche parche = parcheRepository.findById(parcheId).orElseThrow(() -> new ParcheNotFoundException(parcheId));
+        CollaborationTools current = parche.getCollabs();
+        if (current != null && Objects.equals(current.getParquesId(), parquesId) && Objects.equals(current.getCanvasId(), canvasId)) {
+            log.debug("Collaboration tools already set for parche {}; skipping", parcheId);
+            return;
+        }
+
         parche.assignCollabs(parquesId, canvasId);
         parcheRepository.save(parche);
     }
@@ -119,6 +144,7 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
         parche.addEvent(eventId);
         parcheRepository.save(parche);
     }
+
     @Override
     @Transactional
     public void unlinkEventFromParche(UUID parcheId, UUID eventId) {
@@ -132,6 +158,7 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
     public Parche getParcheById(UUID parcheId) {
         return parcheRepository.findById(parcheId).orElseThrow(() -> new ParcheNotFoundException(parcheId));
     }
+
     @Override
     public Set<UUID> getEventsOfParche(UUID parcheId) {
         return getParcheById(parcheId).getEvents();

@@ -5,6 +5,7 @@ import ingprompt.patricia.parches.application.port.out.InviteRepositoryOutPort;
 import ingprompt.patricia.parches.application.port.out.InviteTokenGeneratorPort;
 import ingprompt.patricia.parches.application.port.out.ParcheEventPublisherOut;
 import ingprompt.patricia.parches.application.port.out.ParcheRepositoryOutPort;
+import ingprompt.patricia.parches.application.service.concurrency.OptimisticRetryExecutor;
 import ingprompt.patricia.parches.domain.exception.InvalidInviteTokenException;
 import ingprompt.patricia.parches.domain.exception.NotParcheOwnerException;
 import ingprompt.patricia.parches.domain.exception.ParcheFullException;
@@ -13,7 +14,6 @@ import ingprompt.patricia.parches.domain.exception.ParcheNotFoundException;
 import ingprompt.patricia.parches.domain.model.Parche;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -24,6 +24,7 @@ public class InviteService implements InviteUserCase {
     private final InviteTokenGeneratorPort tokenGeneratorPort;
     private final ParcheRepositoryOutPort parcheRepositoryOutPort;
     private final ParcheEventPublisherOut eventPublisher;
+    private final OptimisticRetryExecutor retryExecutor;
 
 
     @Override
@@ -45,14 +46,16 @@ public class InviteService implements InviteUserCase {
     }
 
     @Override
-    @Transactional
     public void acceptInvite(String inviteToken, UUID acceptingUserId) {
         UUID parcheId = inviteRepositoryOutPort.findParcheIdByToken(inviteToken).orElseThrow(InvalidInviteTokenException::new);
+        retryExecutor.runRetrying(parcheId, () -> doAcceptInvite(parcheId, acceptingUserId));
+    }
+
+    private void doAcceptInvite(UUID parcheId, UUID acceptingUserId) {
         Parche parche = parcheRepositoryOutPort.findById(parcheId).orElseThrow(() -> new ParcheNotFoundException(parcheId));
         if (parche.hasMember(acceptingUserId)) {
             return;
         }
-
         if (parche.isFull()) {
             throw new ParcheFullException(parcheId);
         }

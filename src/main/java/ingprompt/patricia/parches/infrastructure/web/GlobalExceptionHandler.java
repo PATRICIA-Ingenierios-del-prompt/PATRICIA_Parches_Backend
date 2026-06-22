@@ -5,6 +5,7 @@ import ingprompt.patricia.parches.domain.exception.InvalidInviteTokenException;
 import ingprompt.patricia.parches.domain.exception.InvalidPictureUploadException;
 import ingprompt.patricia.parches.domain.exception.MemberNotFoundInParche;
 import ingprompt.patricia.parches.domain.exception.NotParcheOwnerException;
+import ingprompt.patricia.parches.domain.exception.ParcheConcurrentModificationException;
 import ingprompt.patricia.parches.domain.exception.ParcheFullException;
 import ingprompt.patricia.parches.domain.exception.ParcheIsPrivateException;
 import ingprompt.patricia.parches.domain.exception.ParcheIsPublicException;
@@ -46,6 +47,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ParcheFullException.class)
     public ResponseEntity<Map<String, String>> handleFull(ParcheFullException ex) {
+        return error(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(ParcheConcurrentModificationException.class)
+    public ResponseEntity<Map<String, String>> handleConcurrent(ParcheConcurrentModificationException ex) {
+        // 409: idempotent operation; the client may retry.
         return error(HttpStatus.CONFLICT, ex.getMessage());
     }
 
