@@ -41,6 +41,13 @@ public class ParcheEntity {
 
     private int maxCapacity;
 
+    @Column(length = 1000)
+    private String pictureUrl;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "parche_members", joinColumns = @JoinColumn(name = "parche_id"))
     @Column(name = "member_id")

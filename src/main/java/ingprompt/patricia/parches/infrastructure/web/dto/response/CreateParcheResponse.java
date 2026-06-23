@@ -17,4 +17,5 @@ public class CreateParcheResponse {
     private String description;
     private Visibility visibility;
     private ParcheStatus status;
+    private String pictureUrl;
 }

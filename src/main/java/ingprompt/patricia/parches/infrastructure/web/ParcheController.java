@@ -24,8 +24,8 @@ public class ParcheController {
 
     @PostMapping
     public ResponseEntity<CreateParcheResponse> createParche(@RequestBody CreateParcheRequest request, @RequestHeader("X-User-Id") UUID ownerId) {
-        Parche newParche = serviceManageParche.createParche(request.getName(), request.getCategory(), request.getMaxCapacity(), ownerId, request.getDescription(), request.getVisibility());
-        CreateParcheResponse response = new CreateParcheResponse(newParche.getParcheId(), newParche.getName(), newParche.getDescription(), newParche.getVisibility(), newParche.getStatus());
+        Parche newParche = serviceManageParche.createParche(request.getName(), request.getCategory(), request.getMaxCapacity(), ownerId, request.getDescription(), request.getVisibility(), request.getPictureUrl());
+        CreateParcheResponse response = new CreateParcheResponse(newParche.getParcheId(), newParche.getName(), newParche.getDescription(), newParche.getVisibility(), newParche.getStatus(), newParche.getPictureUrl());
         return ResponseEntity.ok(response);
     }
 

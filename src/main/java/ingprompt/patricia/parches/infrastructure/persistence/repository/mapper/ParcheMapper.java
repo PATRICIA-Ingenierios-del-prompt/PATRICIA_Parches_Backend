@@ -22,6 +22,10 @@ public final class ParcheMapper {
         entity.setVisibility(parche.getVisibility());
         entity.setStatus(parche.getStatus());
         entity.setMaxCapacity(parche.getMaxCapacity());
+        entity.setPictureUrl(parche.getPictureUrl());
+        // CRITICAL: propagate the version we originally loaded so JPA's merge()
+        // can detect concurrent modifications instead of silently overwriting.
+        entity.setVersion(parche.getVersion());
         entity.setMembers(new HashSet<>(parche.getMembers()));
         entity.setEvents(new HashSet<>(parche.getEvents()));
         entity.setCommunication(copy(parche.getCommunication()));
@@ -40,6 +44,8 @@ public final class ParcheMapper {
                 entity.getVisibility()
         );
         parche.setStatus(entity.getStatus());
+        parche.setPictureUrl(entity.getPictureUrl());
+        parche.setVersion(entity.getVersion());
         parche.setMembers(entity.getMembers() == null ? new HashSet<>() : new HashSet<>(entity.getMembers()));
         parche.setEvents(entity.getEvents() == null ? new HashSet<>() : new HashSet<>(entity.getEvents()));
         parche.setCommunication(copy(entity.getCommunication()));

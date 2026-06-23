@@ -3,14 +3,19 @@ package ingprompt.patricia.parches.infrastructure.messaging.config;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
 import org.springframework.amqp.support.converter.Jackson2JavaTypeMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 
 @Configuration
 public class RabbitMQConfig {
@@ -36,6 +41,10 @@ public class RabbitMQConfig {
     public static final String EVENT_LINKED_QUEUE = "parches.event.linked.queue";
     public static final String EVENT_DELETED_QUEUE = "parches.event.deleted.queue";
 
+    // ---------- Dead-letter infrastructure ----------
+    public static final String DLX_EXCHANGE = "parches.dlx";
+    private static final String DLQ_SUFFIX = ".dlq";
+
     @Bean
     public TopicExchange parcheExchange() {
         return new TopicExchange(PARCHE_EXCHANGE, true, false);
@@ -47,51 +56,94 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public TopicExchange parchesDeadLetterExchange() {
+        return new TopicExchange(DLX_EXCHANGE, true, false);
+    }
+
+    // ---- Inbound queues: every one now routes to the DLX on basicNack(requeue=false) ----
+
+    @Bean
     public Queue communicationReadyQueue() {
-        return new Queue(COMMUNICATION_READY_QUEUE, true);
+        return dlqEnabled(COMMUNICATION_READY_QUEUE);
     }
 
     @Bean
     public Queue collaborationReadyQueue() {
-        return new Queue(COLLABORATION_READY_QUEUE, true);
+        return dlqEnabled(COLLABORATION_READY_QUEUE);
     }
 
     @Bean
     public Queue eventLinkedQueue() {
-        return new Queue(EVENT_LINKED_QUEUE, true);
+        return dlqEnabled(EVENT_LINKED_QUEUE);
     }
 
     @Bean
     public Queue eventDeletedQueue() {
-        return new Queue(EVENT_DELETED_QUEUE, true);
+        return dlqEnabled(EVENT_DELETED_QUEUE);
+    }
+
+    // ---- Per-queue DLQs (parked messages live here for inspection) ----
+
+    @Bean
+    public Queue communicationReadyDlq() {
+        return QueueBuilder.durable(COMMUNICATION_READY_QUEUE + DLQ_SUFFIX).build();
     }
 
     @Bean
+    public Queue collaborationReadyDlq() {
+        return QueueBuilder.durable(COLLABORATION_READY_QUEUE + DLQ_SUFFIX).build();
+    }
+
+    @Bean
+    public Queue eventLinkedDlq() {
+        return QueueBuilder.durable(EVENT_LINKED_QUEUE + DLQ_SUFFIX).build();
+    }
+
+    @Bean
+    public Queue eventDeletedDlq() {
+        return QueueBuilder.durable(EVENT_DELETED_QUEUE + DLQ_SUFFIX).build();
+    }
+
+    // ---- Bindings: live queues to their owning exchange + DLQs to the DLX ----
+
+    @Bean
     public Binding communicationReadyBinding() {
-        return BindingBuilder.bind(communicationReadyQueue())
-                .to(parcheExchange())
-                .with(COMMUNICATION_READY_ROUTING_KEY);
+        return BindingBuilder.bind(communicationReadyQueue()).to(parcheExchange()).with(COMMUNICATION_READY_ROUTING_KEY);
     }
 
     @Bean
     public Binding collaborationReadyBinding() {
-        return BindingBuilder.bind(collaborationReadyQueue())
-                .to(parcheExchange())
-                .with(COLLABORATION_READY_ROUTING_KEY);
+        return BindingBuilder.bind(collaborationReadyQueue()).to(parcheExchange()).with(COLLABORATION_READY_ROUTING_KEY);
     }
 
     @Bean
     public Binding eventLinkedBinding() {
-        return BindingBuilder.bind(eventLinkedQueue())
-                .to(eventExchange())
-                .with(EVENT_LINKED_ROUTING_KEY);
+        return BindingBuilder.bind(eventLinkedQueue()).to(eventExchange()).with(EVENT_LINKED_ROUTING_KEY);
     }
 
     @Bean
     public Binding eventDeletedBinding() {
-        return BindingBuilder.bind(eventDeletedQueue())
-                .to(eventExchange())
-                .with(EVENT_DELETED_ROUTING_KEY);
+        return BindingBuilder.bind(eventDeletedQueue()).to(eventExchange()).with(EVENT_DELETED_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding communicationReadyDlqBinding() {
+        return dlqBinding(COMMUNICATION_READY_QUEUE, communicationReadyDlq());
+    }
+
+    @Bean
+    public Binding collaborationReadyDlqBinding() {
+        return dlqBinding(COLLABORATION_READY_QUEUE, collaborationReadyDlq());
+    }
+
+    @Bean
+    public Binding eventLinkedDlqBinding() {
+        return dlqBinding(EVENT_LINKED_QUEUE, eventLinkedDlq());
+    }
+
+    @Bean
+    public Binding eventDeletedDlqBinding() {
+        return dlqBinding(EVENT_DELETED_QUEUE, eventDeletedDlq());
     }
 
     @Bean
@@ -108,5 +160,40 @@ public class RabbitMQConfig {
         return template;
     }
 
+    // ---- RETRY ----
+    @Bean
+    public RetryOperationsInterceptor retryInterceptor() {
+        return RetryInterceptorBuilder.stateless()
+                .maxAttempts(3)
+                .backOffOptions(500L, 2.0, 10_000L)
+                .recoverer(new RejectAndDontRequeueRecoverer())
+                .build();
+    }
 
+
+    @Bean
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
+            ConnectionFactory connectionFactory,
+            MessageConverter messageConverter,
+            RetryOperationsInterceptor retryInterceptor) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        factory.setMessageConverter(messageConverter);
+        factory.setDefaultRequeueRejected(false);
+        factory.setAdviceChain(retryInterceptor);
+        return factory;
+    }
+
+    // ---- helpers ----
+
+    private Queue dlqEnabled(String queueName) {
+        return QueueBuilder.durable(queueName)
+                .withArgument("x-dead-letter-exchange", DLX_EXCHANGE)
+                .withArgument("x-dead-letter-routing-key", queueName + DLQ_SUFFIX)
+                .build();
+    }
+
+    private Binding dlqBinding(String queueName, Queue dlq) {
+        return BindingBuilder.bind(dlq).to(parchesDeadLetterExchange()).with(queueName + DLQ_SUFFIX);
+    }
 }
