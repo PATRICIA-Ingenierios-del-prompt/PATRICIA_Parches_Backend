@@ -5,6 +5,7 @@ import ingprompt.patricia.parches.application.port.in.ManageMemberParcheCase;
 import ingprompt.patricia.parches.application.port.in.ManageParcheCase;
 import ingprompt.patricia.parches.application.port.in.ParcheProvisioningCase;
 import ingprompt.patricia.parches.application.port.in.ParcheQueryCase;
+import ingprompt.patricia.parches.application.port.in.SpecialQueriesFilterCases;
 import ingprompt.patricia.parches.application.port.out.ParcheEventPublisherOut;
 import ingprompt.patricia.parches.application.port.out.ParcheRepositoryOutPort;
 import ingprompt.patricia.parches.application.service.concurrency.OptimisticRetryExecutor;
@@ -16,6 +17,8 @@ import ingprompt.patricia.parches.domain.model.CommunicationChannels;
 import ingprompt.patricia.parches.domain.model.Parche;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +31,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, ManageMemberParcheCase, LinkEventToParcheCase, ParcheQueryCase {
+public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, ManageMemberParcheCase, LinkEventToParcheCase, ParcheQueryCase, SpecialQueriesFilterCases {
     private final ParcheRepositoryOutPort parcheRepository;
     private final ParcheEventPublisherOut eventPublisher;
     private final OptimisticRetryExecutor retryExecutor;
@@ -162,5 +165,29 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
     @Override
     public Set<UUID> getEventsOfParche(UUID parcheId) {
         return getParcheById(parcheId).getEvents();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Parche> filterByCategory(ParcheCategory category, Pageable pageable) {
+        return parcheRepository.findByCategory(category, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Parche> filterByVisibility(Visibility visibility, Pageable pageable) {
+        return parcheRepository.findByVisibility(visibility, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Parche> filterByOpenSpots(Pageable pageable) {
+        return parcheRepository.findWithOpenSpots(pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Parche> findByName(String name, Pageable pageable) {
+        return parcheRepository.findByNameContaining(name, pageable);
     }
 }
