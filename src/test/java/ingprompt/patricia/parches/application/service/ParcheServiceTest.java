@@ -81,7 +81,7 @@ class ParcheServiceTest {
         assertThat(result.getMembers()).contains(ownerId);
         assertThat(result.getPictureUrl()).isEqualTo("pic");
         verify(parcheRepository).save(any(Parche.class));
-        verify(eventPublisher).publishParcheWasCreated(eq(result.getParcheId()), eq(ownerId));
+        verify(eventPublisher).publishParcheWasCreated(eq(result.getParcheId()), eq(ownerId), eq(Visibility.PUBLIC));
     }
 
     @Test
