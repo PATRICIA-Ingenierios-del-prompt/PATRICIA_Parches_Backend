@@ -42,7 +42,7 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
         Parche parche = new Parche(UUID.randomUUID(), name, category, num, ownerId, description, visibility);
         parche.setPictureUrl(pictureUrl);
         parcheRepository.save(parche);
-        eventPublisher.publishParcheWasCreated(parche.getParcheId(), parche.getOwnerId());
+        eventPublisher.publishParcheWasCreated(parche.getParcheId(), parche.getOwnerId(), parche.getVisibility());
         return parche;
     }
 

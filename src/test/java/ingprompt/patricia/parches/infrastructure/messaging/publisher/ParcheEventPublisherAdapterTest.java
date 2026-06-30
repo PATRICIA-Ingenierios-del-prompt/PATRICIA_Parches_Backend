@@ -38,12 +38,13 @@ class ParcheEventPublisherAdapterTest {
 
     @Test
     void publishParcheWasCreated_sendsCreatedEvent() {
-        adapter.publishParcheWasCreated(parcheId, userId);
+        adapter.publishParcheWasCreated(parcheId, userId, ingprompt.patricia.parches.domain.enums.Visibility.PUBLIC);
 
         ArgumentCaptor<ParcheCreatedEvent> body = ArgumentCaptor.forClass(ParcheCreatedEvent.class);
         verify(rabbitTemplate).convertAndSend(eq(RabbitMQConfig.PARCHE_EXCHANGE), eq(RabbitMQConfig.PARCHE_CREATED_ROUTING_KEY), body.capture());
         assertThat(body.getValue().getParcheId()).isEqualTo(parcheId);
         assertThat(body.getValue().getOwnerId()).isEqualTo(userId);
+        assertThat(body.getValue().getVisibility()).isEqualTo(ingprompt.patricia.parches.domain.enums.Visibility.PUBLIC);
     }
 
     @Test

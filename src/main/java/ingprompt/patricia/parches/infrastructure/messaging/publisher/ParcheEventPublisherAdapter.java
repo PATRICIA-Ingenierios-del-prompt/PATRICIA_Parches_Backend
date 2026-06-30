@@ -1,6 +1,7 @@
 package ingprompt.patricia.parches.infrastructure.messaging.publisher;
 
 import ingprompt.patricia.parches.application.port.out.ParcheEventPublisherOut;
+import ingprompt.patricia.parches.domain.enums.Visibility;
 import ingprompt.patricia.parches.infrastructure.messaging.config.RabbitMQConfig;
 import ingprompt.patricia.parches.infrastructure.messaging.event.ParcheCreatedEvent;
 import ingprompt.patricia.parches.infrastructure.messaging.event.ParcheDeletedEvent;
@@ -22,8 +23,8 @@ public class ParcheEventPublisherAdapter implements ParcheEventPublisherOut {
     private final RabbitTemplate rabbitTemplate;
 
     @Override
-    public void publishParcheWasCreated(UUID parcheId, UUID ownerId) {
-        rabbitTemplate.convertAndSend(RabbitMQConfig.PARCHE_EXCHANGE, RabbitMQConfig.PARCHE_CREATED_ROUTING_KEY, new ParcheCreatedEvent(parcheId, ownerId));
+    public void publishParcheWasCreated(UUID parcheId, UUID ownerId, Visibility visibility) {
+        rabbitTemplate.convertAndSend(RabbitMQConfig.PARCHE_EXCHANGE, RabbitMQConfig.PARCHE_CREATED_ROUTING_KEY, new ParcheCreatedEvent(parcheId, ownerId, visibility));
     }
 
     @Override
