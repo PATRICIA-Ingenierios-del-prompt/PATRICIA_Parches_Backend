@@ -4,5 +4,8 @@ import java.util.UUID;
 
 public interface ParcheProvisioningCase {
     void assignCommunicationChannels(UUID parcheId, UUID chatId, UUID voiceId);
-    void assignCollaborationTools(UUID parcheId, UUID parquesId, UUID canvasId);
+
+    // Collaboration split into two services: each id arrives independently.
+    void assignParquesTool(UUID parcheId, UUID parquesId);
+    void assignBoardTool(UUID parcheId, UUID canvasId);
 }

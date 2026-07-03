@@ -27,10 +27,13 @@ public class RabbitMQConfig {
 
     // ---------- Inbound: provisioning replies (owned by other services) ----------
     public static final String COMMUNICATION_READY_ROUTING_KEY = "parche.communication.ready";
-    public static final String COLLABORATION_READY_ROUTING_KEY = "parche.collaboration.ready";
+    // Collaboration was split into two services: Parques (game) and Board (canvas).
+    public static final String PARQUES_READY_ROUTING_KEY = "parche.parques.ready";
+    public static final String BOARD_READY_ROUTING_KEY = "parche.board.ready";
 
     public static final String COMMUNICATION_READY_QUEUE = "parches.communication.ready.queue";
-    public static final String COLLABORATION_READY_QUEUE = "parches.collaboration.ready.queue";
+    public static final String PARQUES_READY_QUEUE = "parches.parques.ready.queue";
+    public static final String BOARD_READY_QUEUE = "parches.board.ready.queue";
 
     // ---------- Inbound: event lifecycle (owned by Event MS) ----------
     public static final String EVENT_EXCHANGE = "event.events";
@@ -68,8 +71,13 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Queue collaborationReadyQueue() {
-        return dlqEnabled(COLLABORATION_READY_QUEUE);
+    public Queue parquesReadyQueue() {
+        return dlqEnabled(PARQUES_READY_QUEUE);
+    }
+
+    @Bean
+    public Queue boardReadyQueue() {
+        return dlqEnabled(BOARD_READY_QUEUE);
     }
 
     @Bean
@@ -90,8 +98,13 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Queue collaborationReadyDlq() {
-        return QueueBuilder.durable(COLLABORATION_READY_QUEUE + DLQ_SUFFIX).build();
+    public Queue parquesReadyDlq() {
+        return QueueBuilder.durable(PARQUES_READY_QUEUE + DLQ_SUFFIX).build();
+    }
+
+    @Bean
+    public Queue boardReadyDlq() {
+        return QueueBuilder.durable(BOARD_READY_QUEUE + DLQ_SUFFIX).build();
     }
 
     @Bean
@@ -112,8 +125,13 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding collaborationReadyBinding() {
-        return BindingBuilder.bind(collaborationReadyQueue()).to(parcheExchange()).with(COLLABORATION_READY_ROUTING_KEY);
+    public Binding parquesReadyBinding() {
+        return BindingBuilder.bind(parquesReadyQueue()).to(parcheExchange()).with(PARQUES_READY_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding boardReadyBinding() {
+        return BindingBuilder.bind(boardReadyQueue()).to(parcheExchange()).with(BOARD_READY_ROUTING_KEY);
     }
 
     @Bean
@@ -132,8 +150,13 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding collaborationReadyDlqBinding() {
-        return dlqBinding(COLLABORATION_READY_QUEUE, collaborationReadyDlq());
+    public Binding parquesReadyDlqBinding() {
+        return dlqBinding(PARQUES_READY_QUEUE, parquesReadyDlq());
+    }
+
+    @Bean
+    public Binding boardReadyDlqBinding() {
+        return dlqBinding(BOARD_READY_QUEUE, boardReadyDlq());
     }
 
     @Bean

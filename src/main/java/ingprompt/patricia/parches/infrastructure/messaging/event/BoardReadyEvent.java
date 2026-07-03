@@ -9,8 +9,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CollaborationReadyEvent {
+public class BoardReadyEvent {
     private UUID parcheId;
-    private UUID parquesId;
     private UUID canvasId;
 }
