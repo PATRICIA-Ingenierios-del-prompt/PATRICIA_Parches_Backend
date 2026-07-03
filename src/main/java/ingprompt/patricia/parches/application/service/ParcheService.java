@@ -119,15 +119,29 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
 
     @Override
     @Transactional
-    public void assignCollaborationTools(UUID parcheId, UUID parquesId, UUID canvasId) {
+    public void assignParquesTool(UUID parcheId, UUID parquesId) {
         Parche parche = parcheRepository.findById(parcheId).orElseThrow(() -> new ParcheNotFoundException(parcheId));
         CollaborationTools current = parche.getCollabs();
-        if (current != null && Objects.equals(current.getParquesId(), parquesId) && Objects.equals(current.getCanvasId(), canvasId)) {
-            log.debug("Collaboration tools already set for parche {}; skipping", parcheId);
+        if (current != null && Objects.equals(current.getParquesId(), parquesId)) {
+            log.debug("Parques id already set for parche {}; skipping", parcheId);
             return;
         }
 
-        parche.assignCollabs(parquesId, canvasId);
+        parche.assignParques(parquesId);
+        parcheRepository.save(parche);
+    }
+
+    @Override
+    @Transactional
+    public void assignBoardTool(UUID parcheId, UUID canvasId) {
+        Parche parche = parcheRepository.findById(parcheId).orElseThrow(() -> new ParcheNotFoundException(parcheId));
+        CollaborationTools current = parche.getCollabs();
+        if (current != null && Objects.equals(current.getCanvasId(), canvasId)) {
+            log.debug("Board (canvas) id already set for parche {}; skipping", parcheId);
+            return;
+        }
+
+        parche.assignBoard(canvasId);
         parcheRepository.save(parche);
     }
 

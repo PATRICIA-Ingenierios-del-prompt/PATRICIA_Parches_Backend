@@ -4,6 +4,7 @@ import ingprompt.patricia.parches.application.port.out.ParcheEventPublisherOut;
 import ingprompt.patricia.parches.application.port.out.ParcheRepositoryOutPort;
 import ingprompt.patricia.parches.application.service.concurrency.OptimisticRetryExecutor;
 import ingprompt.patricia.parches.domain.enums.ParcheCategory;
+import ingprompt.patricia.parches.domain.enums.ParcheStatus;
 import ingprompt.patricia.parches.domain.enums.Visibility;
 import ingprompt.patricia.parches.domain.exception.CannotRemoveOwnerException;
 import ingprompt.patricia.parches.domain.exception.MemberNotFoundInParche;
@@ -229,29 +230,73 @@ class ParcheServiceTest {
     }
 
     @Test
-    void assignCollaborationTools_setsAndSaves() {
+    void assignParquesTool_setsAndSaves() {
         Parche parche = newParche(Visibility.PUBLIC, 10);
         when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));
         UUID parquesId = UUID.randomUUID();
+
+        service.assignParquesTool(parcheId, parquesId);
+
+        assertThat(parche.getCollabs().getParquesId()).isEqualTo(parquesId);
+        verify(parcheRepository).save(parche);
+    }
+
+    @Test
+    void assignParquesTool_isIdempotent() {
+        Parche parche = newParche(Visibility.PUBLIC, 10);
+        UUID parquesId = UUID.randomUUID();
+        parche.assignParques(parquesId);
+        when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));
+
+        service.assignParquesTool(parcheId, parquesId);
+
+        verify(parcheRepository, never()).save(any());
+    }
+
+    @Test
+    void assignBoardTool_setsAndSaves() {
+        Parche parche = newParche(Visibility.PUBLIC, 10);
+        when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));
         UUID canvasId = UUID.randomUUID();
 
-        service.assignCollaborationTools(parcheId, parquesId, canvasId);
+        service.assignBoardTool(parcheId, canvasId);
 
         assertThat(parche.getCollabs().getCanvasId()).isEqualTo(canvasId);
         verify(parcheRepository).save(parche);
     }
 
     @Test
-    void assignCollaborationTools_isIdempotent() {
+    void assignBoardTool_isIdempotent() {
+        Parche parche = newParche(Visibility.PUBLIC, 10);
+        UUID canvasId = UUID.randomUUID();
+        parche.assignBoard(canvasId);
+        when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));
+
+        service.assignBoardTool(parcheId, canvasId);
+
+        verify(parcheRepository, never()).save(any());
+    }
+
+    @Test
+    void collaboration_splitEvents_assembleToolsAndFlipReady() {
+        // Both ids arrive independently (Parques MS + Board MS); together with the
+        // communication channels the parche should end up READY.
         Parche parche = newParche(Visibility.PUBLIC, 10);
         UUID parquesId = UUID.randomUUID();
         UUID canvasId = UUID.randomUUID();
-        parche.assignCollabs(parquesId, canvasId);
+        UUID chatId = UUID.randomUUID();
+        UUID voiceId = UUID.randomUUID();
         when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));
 
-        service.assignCollaborationTools(parcheId, parquesId, canvasId);
+        service.assignCommunicationChannels(parcheId, chatId, voiceId);
+        service.assignParquesTool(parcheId, parquesId);
+        assertThat(parche.getStatus()).isEqualTo(ParcheStatus.PENDING_PROVISIONING);
 
-        verify(parcheRepository, never()).save(any());
+        service.assignBoardTool(parcheId, canvasId);
+
+        assertThat(parche.getCollabs().getParquesId()).isEqualTo(parquesId);
+        assertThat(parche.getCollabs().getCanvasId()).isEqualTo(canvasId);
+        assertThat(parche.getStatus()).isEqualTo(ParcheStatus.READY);
     }
 
     // ---- LinkEventToParcheCase ----

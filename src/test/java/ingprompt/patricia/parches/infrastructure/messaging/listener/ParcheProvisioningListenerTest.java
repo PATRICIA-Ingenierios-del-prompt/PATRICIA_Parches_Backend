@@ -1,8 +1,9 @@
 package ingprompt.patricia.parches.infrastructure.messaging.listener;
 
 import ingprompt.patricia.parches.application.port.in.ParcheProvisioningCase;
-import ingprompt.patricia.parches.infrastructure.messaging.event.CollaborationReadyEvent;
+import ingprompt.patricia.parches.infrastructure.messaging.event.BoardReadyEvent;
 import ingprompt.patricia.parches.infrastructure.messaging.event.CommunicationReadyEvent;
+import ingprompt.patricia.parches.infrastructure.messaging.event.ParquesReadyEvent;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,13 +34,22 @@ class ParcheProvisioningListenerTest {
     }
 
     @Test
-    void onCollaborationReady_assignsTools() {
+    void onParquesReady_assignsParquesTool() {
         UUID parcheId = UUID.randomUUID();
         UUID parquesId = UUID.randomUUID();
+
+        listener.onParquesReady(new ParquesReadyEvent(parcheId, parquesId));
+
+        verify(provisioningCase).assignParquesTool(parcheId, parquesId);
+    }
+
+    @Test
+    void onBoardReady_assignsBoardTool() {
+        UUID parcheId = UUID.randomUUID();
         UUID canvasId = UUID.randomUUID();
 
-        listener.onCollaborationReady(new CollaborationReadyEvent(parcheId, parquesId, canvasId));
+        listener.onBoardReady(new BoardReadyEvent(parcheId, canvasId));
 
-        verify(provisioningCase).assignCollaborationTools(parcheId, parquesId, canvasId);
+        verify(provisioningCase).assignBoardTool(parcheId, canvasId);
     }
 }

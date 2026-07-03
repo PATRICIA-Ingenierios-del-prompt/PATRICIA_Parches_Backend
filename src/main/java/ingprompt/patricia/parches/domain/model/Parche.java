@@ -71,6 +71,15 @@ public class Parche {
         refreshStatus();
     }
 
+    public void assignParques(UUID parquesId) {
+        this.collabs.setParquesId(parquesId);
+        refreshStatus();
+    }
+    public void assignBoard(UUID canvasId) {
+        this.collabs.setCanvasId(canvasId);
+        refreshStatus();
+    }
+
     public void rotateParquesId(UUID nuevoParquesId) {
         this.collabs.setParquesId(nuevoParquesId);
     }
