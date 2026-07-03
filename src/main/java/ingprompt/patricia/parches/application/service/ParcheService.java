@@ -204,4 +204,10 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
     public Page<Parche> findByName(String name, Pageable pageable) {
         return parcheRepository.findByNameContaining(name, pageable);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Parche> findParchesForMember(UUID userId, Pageable pageable) {
+        return parcheRepository.findByMember(userId, pageable);
+    }
 }

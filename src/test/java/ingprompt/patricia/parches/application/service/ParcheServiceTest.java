@@ -410,4 +410,14 @@ class ParcheServiceTest {
 
         assertThat(service.findByName("salsa", pageable)).isSameAs(page);
     }
+
+    @Test
+    void findParchesForMember_delegatesToRepository() {
+        UUID userId = UUID.randomUUID();
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Parche> page = new PageImpl<>(List.of(newParche(Visibility.PRIVATE, 10)));
+        when(parcheRepository.findByMember(userId, pageable)).thenReturn(page);
+
+        assertThat(service.findParchesForMember(userId, pageable)).isSameAs(page);
+    }
 }

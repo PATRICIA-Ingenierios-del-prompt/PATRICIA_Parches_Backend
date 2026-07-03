@@ -122,4 +122,21 @@ class ParcheRepositoryAdapterIT {
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getName()).isEqualTo("Open");
     }
+
+    @Test
+    void findByMember_returnsOnlyParchesTheUserBelongsTo() {
+        UUID user = UUID.randomUUID();
+        // The user is the owner (owners are members) of one private parche...
+        adapter.save(new Parche(UUID.randomUUID(), "Owned", ParcheCategory.MUSIC, 10, user, "desc", Visibility.PRIVATE));
+        // ...and an added member of another.
+        Parche joined = new Parche(UUID.randomUUID(), "Joined", ParcheCategory.ART, 10, UUID.randomUUID(), "desc", Visibility.PRIVATE);
+        joined.addMember(user);
+        adapter.save(joined);
+        // A parche the user has nothing to do with.
+        adapter.save(newParche("Other", ParcheCategory.MUSIC, Visibility.PUBLIC, 10, 0));
+
+        Page<Parche> result = adapter.findByMember(user, firstPage);
+
+        assertThat(result.getContent()).extracting(Parche::getName).containsExactlyInAnyOrder("Owned", "Joined");
+    }
 }

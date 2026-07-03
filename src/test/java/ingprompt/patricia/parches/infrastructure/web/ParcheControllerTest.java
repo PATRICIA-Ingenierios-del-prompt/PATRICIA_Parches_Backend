@@ -169,4 +169,18 @@ class ParcheControllerTest {
         mockMvc.perform(get("/api/parches/visibility").param("visibility", "PUBLIC").header("X-User-Id", userId))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void myParches_withHeader_returns200() throws Exception {
+        when(filter.findParchesForMember(eq(userId), any())).thenReturn(new PageImpl<>(List.of(sampleParche())));
+
+        mockMvc.perform(get("/api/parches/me").header("X-User-Id", userId))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void myParches_withoutHeader_returns400() throws Exception {
+        mockMvc.perform(get("/api/parches/me"))
+                .andExpect(status().isBadRequest());
+    }
 }
