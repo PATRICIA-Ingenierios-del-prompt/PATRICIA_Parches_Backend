@@ -82,4 +82,9 @@ public class ParcheController {
     public ResponseEntity<Page<ParcheSummaryResponse>> filterByName(@RequestParam String name, @RequestHeader("X-User-Id") UUID userId, Pageable pageable) {
         return ResponseEntity.ok(serviceFilter.findByName(name, pageable).map(ParcheSummaryResponse::from));
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<Page<ParcheSummaryResponse>> myParches(@RequestHeader("X-User-Id") UUID userId, Pageable pageable) {
+        return ResponseEntity.ok(serviceFilter.findParchesForMember(userId, pageable).map(ParcheSummaryResponse::from));
+    }
 }

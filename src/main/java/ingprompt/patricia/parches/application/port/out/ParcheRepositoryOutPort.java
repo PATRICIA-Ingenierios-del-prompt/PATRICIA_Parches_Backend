@@ -18,4 +18,5 @@ public interface ParcheRepositoryOutPort {
     Page<Parche> findByVisibility(Visibility visibility, Pageable pageable);
     Page<Parche> findWithOpenSpots(Pageable pageable);
     Page<Parche> findByNameContaining(String name, Pageable pageable);
+    Page<Parche> findByMember(UUID userId, Pageable pageable);
 }

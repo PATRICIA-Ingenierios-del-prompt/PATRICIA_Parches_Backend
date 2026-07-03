@@ -53,4 +53,9 @@ public class ParcheRepositoryAdapter implements ParcheRepositoryOutPort {
     public Page<Parche> findByNameContaining(String name, Pageable pageable) {
         return postgreRepository.findByNameContainingIgnoreCase(name, pageable).map(ParcheMapper::toDomain);
     }
+
+    @Override
+    public Page<Parche> findByMember(UUID userId, Pageable pageable) {
+        return postgreRepository.findByMember(userId, pageable).map(ParcheMapper::toDomain);
+    }
 }
