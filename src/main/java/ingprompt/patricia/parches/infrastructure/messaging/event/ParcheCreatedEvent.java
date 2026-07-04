@@ -11,7 +11,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ParcheCreatedEvent {
+    private UUID sourceEventId;
     private UUID parcheId;
-    private UUID ownerId;
+    private String name;
     private Visibility visibility;
+    private UUID ownerId;
 }
