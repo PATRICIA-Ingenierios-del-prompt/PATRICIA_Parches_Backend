@@ -3,9 +3,11 @@ package ingprompt.patricia.parches.infrastructure.web;
 import ingprompt.patricia.parches.domain.exception.CannotRemoveOwnerException;
 import ingprompt.patricia.parches.domain.exception.InvalidInviteTokenException;
 import ingprompt.patricia.parches.domain.exception.InvalidPictureUploadException;
+import ingprompt.patricia.parches.domain.exception.InvalidReportException;
 import ingprompt.patricia.parches.domain.exception.MemberNotFoundInParche;
 import ingprompt.patricia.parches.domain.exception.NotParcheOwnerException;
 import ingprompt.patricia.parches.domain.exception.ParcheConcurrentModificationException;
+import ingprompt.patricia.parches.domain.exception.UnauthorizedReportAccessException;
 import ingprompt.patricia.parches.domain.exception.ParcheFullException;
 import ingprompt.patricia.parches.domain.exception.ParcheIsPrivateException;
 import ingprompt.patricia.parches.domain.exception.ParcheIsPublicException;
@@ -33,6 +35,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NotParcheOwnerException.class)
     public ResponseEntity<Map<String, String>> handleForbidden(NotParcheOwnerException ex) {
         return error(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(UnauthorizedReportAccessException.class)
+    public ResponseEntity<Map<String, String>> handleReportForbidden(UnauthorizedReportAccessException ex) {
+        return error(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidReportException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidReport(InvalidReportException ex) {
+        return error(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(InvalidInviteTokenException.class)
