@@ -1,0 +1,17 @@
+# Non-secret configuration. RabbitMQ/Postgres/Redis credentials come from the
+# parches-secrets Secret synced by the ExternalSecret (see externalsecret.yaml).
+# AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY intentionally absent here - see the long
+# comment in values.yaml (externalSecrets section) for why S3 upload isn't
+# wired up yet and what the two real options are.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: parches-config
+  namespace: patricia-app
+data:
+  AWS_S3_REGION: {{ .Values.config.awsS3Region | quote }}
+  AWS_S3_BUCKET: {{ .Values.config.awsS3Bucket | quote }}
+  AWS_S3_ENDPOINT: {{ .Values.config.awsS3Endpoint | quote }}
+  AWS_S3_PUBLIC_BASE_URL: {{ .Values.config.awsS3PublicBaseUrl | quote }}
+  PARCHE_PICTURE_MAX_BYTES: {{ .Values.config.parchePictureMaxBytes | quote }}
+  PARCHE_PICTURE_UPLOAD_EXPIRY_SECONDS: {{ .Values.config.parchePictureUploadExpirySeconds | quote }}

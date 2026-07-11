@@ -1,0 +1,75 @@
+# Defaults for the Parches MS chart. The CD job overrides image.repository and
+# image.tag per deploy (pinned to the commit SHA); everything else is edited
+# here and versioned with the code it configures.
+#
+# NAMING NOTE: the repo/app is "parches" (spring.application.name=parches,
+# port 8083), but the surrounding AWS infra was provisioned under the name
+# "parche-core" (ECR repo patricia-dev/parche-core, IRSA role
+# patricia-dev-parche-core-irsa, RDS secret patricia-dev/parche-core/rds).
+# This chart's own k8s objects (Deployment/Service) are named "parches" to
+# match the app itself; only the AWS-side references below use "parche-core".
+# If Gateway's route config expects a different in-cluster Service hostname
+# for this MS, rename the Service (and this comment) to match — check
+# Gateway's RouteConfig/application.yml before assuming "parches" is right.
+
+image:
+  repository: ""            # set by CD: <account>.dkr.ecr.<region>.amazonaws.com/patricia-dev/parche-core
+  tag: ""                   # set by CD: short commit SHA
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+
+serviceAccount:
+  # Reuses the pre-provisioned per-service IRSA role (module.eks.service_irsa["parche-core"]),
+  # same one already fixed for the "-sa" suffix bug and proven with Users' S3 setup.
+  # No permissions policy attached to it yet - S3 access for Parche pictures uses
+  # a different mechanism entirely (see externalSecrets note below), so this
+  # role currently grants nothing; only set roleArn once/if this service needs
+  # a real AWS API call via IRSA.
+  roleArn: ""
+
+config:
+  # Non-secret. AWS_S3_* left mostly empty on purpose (see externalSecrets note) -
+  # S3PresignedPostAdapter.java handles missing credentials gracefully (throws
+  # a clean 4xx at request time, doesn't crash the pod at boot).
+  awsS3Region: "us-east-1"
+  awsS3Bucket: ""
+  awsS3Endpoint: ""
+  awsS3PublicBaseUrl: ""
+  parchePictureMaxBytes: "5242880"
+  parchePictureUploadExpirySeconds: "300"
+
+externalSecrets:
+  clusterSecretStore: patricia-aws-secrets-manager
+  prefix: "patricia-dev"
+  # What's already provisioned in AWS Secrets Manager (confirmed via
+  # `aws secretsmanager list-secrets` earlier this session):
+  #   patricia-dev/amazon-mq        -> EXISTS. SPRING_RABBITMQ_ADDRESSES/USERNAME/PASSWORD.
+  #   patricia-dev/cache-redis      -> EXISTS. REDIS_HOST/REDIS_PORT/REDIS_PASSWORD.
+  #   patricia-dev/parche-core/rds  -> EXISTS. SPRING_DATASOURCE_URL/USERNAME/PASSWORD -
+  #                                    already matches application.properties' own
+  #                                    property names exactly, no renaming needed
+  #                                    (unlike Users' original Postgres mismatch).
+  #
+  # NOT provisioned, and genuinely a different problem than "just create the
+  # secret": S3PresignedPostAdapter.java hand-rolls AWS SigV4 signing WITHOUT
+  # the AWS SDK, so it needs literal, pre-resolved AWS_ACCESS_KEY_ID /
+  # AWS_SECRET_ACCESS_KEY / AWS_SESSION_TOKEN strings - it can't use IRSA's
+  # web-identity-token exchange directly the way Users' SDK-based S3 client
+  # does. Two real options, not yet decided:
+  #   (a) refactor this adapter to use the AWS SDK (software.amazon.awssdk:s3,
+  #       presigner module) with DefaultCredentialsProvider, matching Users'
+  #       pattern - then IRSA works normally, no static keys anywhere; OR
+  #   (b) create a long-lived IAM user + access key, store it in Secrets
+  #       Manager, accept the weaker security posture of a non-expiring key.
+  # Until one of those happens, AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY stay empty
+  # in the ConfigMap - photo upload just returns a clean error, nothing crashes.
+
+resources:
+  requests: { cpu: 500m, memory: 768Mi }
+  limits:   { cpu: "1",  memory: 1Gi }
+
+hpa:
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70
