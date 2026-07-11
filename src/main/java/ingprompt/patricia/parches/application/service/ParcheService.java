@@ -182,6 +182,11 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
     }
 
     @Override
+    public Set<UUID> getMembersOfParche(UUID parcheId) {
+        return getParcheById(parcheId).getMembers();
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Page<Parche> filterByCategory(ParcheCategory category, Pageable pageable) {
         return parcheRepository.findByCategory(category, pageable);
