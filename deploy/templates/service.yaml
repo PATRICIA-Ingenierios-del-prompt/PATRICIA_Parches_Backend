@@ -1,0 +1,16 @@
+# Name `parches` (matches spring.application.name / the repo). If Gateway's
+# route config expects a different in-cluster hostname for this MS, rename
+# this Service (and the ServiceAccount/Deployment name) to match - check
+# Gateway's RouteConfig before assuming this is right.
+apiVersion: v1
+kind: Service
+metadata:
+  name: parches
+  namespace: patricia-app
+  labels: { app: parches }
+spec:
+  type: ClusterIP
+  selector: { app: parches }
+  ports:
+    - port: 8083
+      targetPort: 8083

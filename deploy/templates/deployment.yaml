@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: parches
+  namespace: patricia-app
+  labels: { app: parches, patricia.io/sg-tier: standard }
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels: { app: parches }
+  template:
+    metadata:
+      labels: { app: parches, patricia.io/sg-tier: standard }
+    spec:
+      serviceAccountName: parches
+      containers:
+        - name: parches
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8083
+          envFrom:
+            - configMapRef: { name: parches-config }
+            - secretRef:    { name: parches-secrets }
+          # No SecurityConfig.java in this repo (no spring-security dependency
+          # at all), so /actuator/health/** needs no permitAll fix like Auth
+          # did - there's no filter chain to block it in the first place.
+          startupProbe:
+            httpGet: { path: /actuator/health, port: 8083 }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8083 }
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8083 }
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
