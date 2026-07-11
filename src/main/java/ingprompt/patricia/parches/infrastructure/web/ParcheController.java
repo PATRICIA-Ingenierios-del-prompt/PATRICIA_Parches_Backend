@@ -63,6 +63,11 @@ public class ParcheController {
         return ResponseEntity.ok(serviceParcheQuery.getEventsOfParche(parcheId));
     }
 
+    @GetMapping("/{parcheId}/members")
+    public ResponseEntity<Set<UUID>> getParcheMembers(@PathVariable UUID parcheId) {
+        return ResponseEntity.ok(serviceParcheQuery.getMembersOfParche(parcheId));
+    }
+
     @GetMapping("/category")
     public ResponseEntity<Page<ParcheSummaryResponse>> filterByCategory(@RequestParam ParcheCategory category, @RequestHeader("X-User-Id") UUID userId, Pageable pageable) {
         return ResponseEntity.ok(serviceFilter.filterByCategory(category, pageable).map(ParcheSummaryResponse::from));

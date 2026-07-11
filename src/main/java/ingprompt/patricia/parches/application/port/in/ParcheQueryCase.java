@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface ParcheQueryCase {
     Parche getParcheById(UUID parcheId);
     Set<UUID> getEventsOfParche(UUID parcheId);
+    Set<UUID> getMembersOfParche(UUID parcheId);
 }
