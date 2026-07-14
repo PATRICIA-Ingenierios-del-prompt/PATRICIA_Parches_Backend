@@ -126,7 +126,7 @@ class InviteServiceTest {
 
         assertThat(parche.hasMember(joiner)).isTrue();
         verify(parcheRepository).save(parche);
-        verify(eventPublisher).publishNewParcheMember(parcheId, joiner);
+        verify(eventPublisher).publishNewParcheMember(parcheId, joiner, ParcheCategory.STUDY);
     }
 
     @Test

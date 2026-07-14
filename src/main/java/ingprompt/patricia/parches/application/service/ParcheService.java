@@ -78,7 +78,7 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
 
         parche.addMember(userId);
         parcheRepository.save(parche);
-        eventPublisher.publishNewParcheMember(parcheId, userId);
+        eventPublisher.publishNewParcheMember(parcheId, userId, parche.getCategory());
     }
 
     @Override
