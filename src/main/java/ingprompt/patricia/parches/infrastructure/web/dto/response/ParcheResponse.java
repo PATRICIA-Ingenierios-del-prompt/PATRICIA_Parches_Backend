@@ -3,6 +3,7 @@ package ingprompt.patricia.parches.infrastructure.web.dto.response;
 import ingprompt.patricia.parches.domain.enums.ParcheCategory;
 import ingprompt.patricia.parches.domain.enums.ParcheStatus;
 import ingprompt.patricia.parches.domain.enums.Visibility;
+import ingprompt.patricia.parches.domain.model.CommunicationChannels;
 import ingprompt.patricia.parches.domain.model.Parche;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,6 +21,10 @@ public class ParcheResponse {
     private int maxCapacity;
     private int memberCount;
     private String pictureUrl;
+    // Chat/voice channel ids provisioned by the Communication MS (via
+    // parche.created -> communication.ready). Null until provisioning lands;
+    // the frontend needs chatId to open the real STOMP chat channel.
+    private CommunicationChannels communication;
 
     public static ParcheResponse from(Parche parche) {
         return new ParcheResponse(
@@ -30,7 +35,8 @@ public class ParcheResponse {
                 parche.getStatus(),
                 parche.getMaxCapacity(),
                 parche.getMembers().size(),
-                parche.getPictureUrl()
+                parche.getPictureUrl(),
+                parche.getCommunication()
         );
     }
 }
