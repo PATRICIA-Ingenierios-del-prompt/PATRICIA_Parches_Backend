@@ -5,6 +5,7 @@ import ingprompt.patricia.parches.infrastructure.messaging.event.ParcheCreatedEv
 import ingprompt.patricia.parches.infrastructure.messaging.event.ParcheDeletedEvent;
 import ingprompt.patricia.parches.infrastructure.messaging.event.ParcheMemberExpelledEvent;
 import ingprompt.patricia.parches.infrastructure.messaging.event.ParcheMemberJoinedEvent;
+import ingprompt.patricia.parches.domain.enums.ParcheCategory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,11 +52,12 @@ class ParcheEventPublisherAdapterTest {
 
     @Test
     void publishNewParcheMember_sendsJoinedEvent() {
-        adapter.publishNewParcheMember(parcheId, userId);
+        adapter.publishNewParcheMember(parcheId, userId, ParcheCategory.MUSIC);
 
         ArgumentCaptor<ParcheMemberJoinedEvent> body = ArgumentCaptor.forClass(ParcheMemberJoinedEvent.class);
         verify(rabbitTemplate).convertAndSend(eq(RabbitMQConfig.PARCHE_EXCHANGE), eq("parche.member.joined"), body.capture());
         assertThat(body.getValue().getMemberId()).isEqualTo(userId);
+        assertThat(body.getValue().getCategory()).isEqualTo(ParcheCategory.MUSIC);
     }
 
     @Test

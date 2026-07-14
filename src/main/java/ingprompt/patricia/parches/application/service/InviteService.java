@@ -62,6 +62,6 @@ public class InviteService implements InviteUserCase {
 
         parche.addMember(acceptingUserId);
         parcheRepositoryOutPort.save(parche);
-        eventPublisher.publishNewParcheMember(parcheId, acceptingUserId);
+        eventPublisher.publishNewParcheMember(parcheId, acceptingUserId, parche.getCategory());
     }
 }

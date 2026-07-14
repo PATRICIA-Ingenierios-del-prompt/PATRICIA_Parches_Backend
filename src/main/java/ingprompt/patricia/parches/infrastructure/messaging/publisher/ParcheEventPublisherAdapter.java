@@ -1,6 +1,7 @@
 package ingprompt.patricia.parches.infrastructure.messaging.publisher;
 
 import ingprompt.patricia.parches.application.port.out.ParcheEventPublisherOut;
+import ingprompt.patricia.parches.domain.enums.ParcheCategory;
 import ingprompt.patricia.parches.domain.enums.Visibility;
 import ingprompt.patricia.parches.infrastructure.messaging.config.RabbitMQConfig;
 import ingprompt.patricia.parches.infrastructure.messaging.event.ParcheCreatedEvent;
@@ -31,8 +32,8 @@ public class ParcheEventPublisherAdapter implements ParcheEventPublisherOut {
     }
 
     @Override
-    public void publishNewParcheMember(UUID parcheId, UUID memberId) {
-        rabbitTemplate.convertAndSend(RabbitMQConfig.PARCHE_EXCHANGE, MEMBER_JOINED_ROUTING_KEY, new ParcheMemberJoinedEvent(parcheId, memberId));
+    public void publishNewParcheMember(UUID parcheId, UUID memberId, ParcheCategory category) {
+        rabbitTemplate.convertAndSend(RabbitMQConfig.PARCHE_EXCHANGE, MEMBER_JOINED_ROUTING_KEY, new ParcheMemberJoinedEvent(parcheId, memberId, category));
     }
 
     @Override

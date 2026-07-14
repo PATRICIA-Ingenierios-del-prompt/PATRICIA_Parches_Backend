@@ -120,7 +120,7 @@ class ParcheServiceTest {
 
         assertThat(parche.hasMember(joiner)).isTrue();
         verify(parcheRepository).save(parche);
-        verify(eventPublisher).publishNewParcheMember(parcheId, joiner);
+        verify(eventPublisher).publishNewParcheMember(parcheId, joiner, ParcheCategory.MUSIC);
     }
 
     @Test
@@ -131,7 +131,7 @@ class ParcheServiceTest {
 
         assertThatThrownBy(() -> service.joinPublicParche(parcheId, UUID.randomUUID()))
                 .isInstanceOf(ParcheIsPrivateException.class);
-        verify(eventPublisher, never()).publishNewParcheMember(any(), any());
+        verify(eventPublisher, never()).publishNewParcheMember(any(), any(), any());
     }
 
     @Test
@@ -153,7 +153,7 @@ class ParcheServiceTest {
         service.joinPublicParche(parcheId, ownerId); // owner is already a member
 
         verify(parcheRepository, never()).save(any());
-        verify(eventPublisher, never()).publishNewParcheMember(any(), any());
+        verify(eventPublisher, never()).publishNewParcheMember(any(), any(), any());
     }
 
     @Test
