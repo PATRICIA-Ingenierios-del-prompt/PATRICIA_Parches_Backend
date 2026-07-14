@@ -1,8 +1,7 @@
 # Non-secret configuration. RabbitMQ/Postgres/Redis credentials come from the
 # parches-secrets Secret synced by the ExternalSecret (see externalsecret.yaml).
-# AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY intentionally absent here - see the long
-# comment in values.yaml (externalSecrets section) for why S3 upload isn't
-# wired up yet and what the two real options are.
+# No AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY here: S3 credentials come from IRSA
+# via the SDK default provider chain (see values.yaml serviceAccount notes).
 apiVersion: v1
 kind: ConfigMap
 metadata:
