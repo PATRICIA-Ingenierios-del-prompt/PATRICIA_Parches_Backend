@@ -8,6 +8,9 @@ import ingprompt.patricia.parches.domain.exception.InvalidPictureUploadException
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -33,19 +36,15 @@ public class S3PresignedPostAdapter implements PictureStorageOutPort {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final String accessKeyId;
-    private final String secretAccessKey;
-    private final String sessionToken;
+    private final AwsCredentialsProvider credentialsProvider;
     private final String region;
     private final String bucket;
     private final String endpoint;
     private final String publicBaseUrl;
     private final long expirySeconds;
 
-    public S3PresignedPostAdapter(@Value("${aws.access-key-id}") String accessKeyId, @Value("${aws.secret-access-key}") String secretAccessKey, @Value("${aws.session-token}") String sessionToken, @Value("${aws.s3.region}") String region, @Value("${aws.s3.bucket}") String bucket, @Value("${aws.s3.endpoint}") String endpoint, @Value("${aws.s3.public-base-url}") String publicBaseUrl, @Value("${parche.picture.upload-expiry-seconds}") long expirySeconds) {
-        this.accessKeyId = accessKeyId;
-        this.secretAccessKey = secretAccessKey;
-        this.sessionToken = sessionToken;
+    public S3PresignedPostAdapter(AwsCredentialsProvider credentialsProvider, @Value("${aws.s3.region}") String region, @Value("${aws.s3.bucket}") String bucket, @Value("${aws.s3.endpoint}") String endpoint, @Value("${aws.s3.public-base-url}") String publicBaseUrl, @Value("${parche.picture.upload-expiry-seconds}") long expirySeconds) {
+        this.credentialsProvider = credentialsProvider;
         this.region = region;
         this.bucket = bucket;
         this.endpoint = endpoint;
@@ -55,22 +54,29 @@ public class S3PresignedPostAdapter implements PictureStorageOutPort {
 
     @Override
     public PresignedUpload generateImageUpload(String contentType, long maxBytes) {
-        if (!StringUtils.hasText(accessKeyId) || !StringUtils.hasText(secretAccessKey)) {
+        if (!StringUtils.hasText(bucket)) {
+            throw new InvalidPictureUploadException("Image storage is not configured (missing S3 bucket)");
+        }
+
+        AwsCredentials credentials;
+        try {
+            credentials = credentialsProvider.resolveCredentials();
+        } catch (RuntimeException e) {
             throw new InvalidPictureUploadException("Image storage is not configured (missing AWS credentials)");
         }
+        String sessionToken = credentials instanceof AwsSessionCredentials session ? session.sessionToken() : null;
 
         String key = KEY_PREFIX + UUID.randomUUID() + "." + extensionFor(contentType);
         Instant now = Instant.now();
         String amzDate = AMZ_DATE.format(now);
         String dateStamp = DATE_STAMP.format(now);
-        String credential = accessKeyId + "/" + dateStamp + "/" + region + "/s3/aws4_request";
+        String credential = credentials.accessKeyId() + "/" + dateStamp + "/" + region + "/s3/aws4_request";
         String expiration = POLICY_EXPIRATION.format(now.plusSeconds(expirySeconds));
 
         // ---- POST policy: every form field below (except "file" and the signature) must be a condition ----
         List<Object> conditions = new ArrayList<>();
         conditions.add(Map.of("bucket", bucket));
         conditions.add(List.of("eq", "$key", key));
-        conditions.add(Map.of("acl", "public-read"));
         conditions.add(Map.of("Content-Type", contentType));
         conditions.add(List.of("content-length-range", 1, maxBytes));
         conditions.add(Map.of("x-amz-algorithm", ALGORITHM));
@@ -85,12 +91,11 @@ public class S3PresignedPostAdapter implements PictureStorageOutPort {
         policy.put("conditions", conditions);
 
         String base64Policy = Base64.getEncoder().encodeToString(toJson(policy).getBytes(StandardCharsets.UTF_8));
-        String signature = hex(hmacSha256(signingKey(dateStamp), base64Policy));
+        String signature = hex(hmacSha256(signingKey(credentials.secretAccessKey(), dateStamp), base64Policy));
 
         // ---- Form fields the client submits (file part LAST) ----
         Map<String, String> fields = new LinkedHashMap<>();
         fields.put("key", key);
-        fields.put("acl", "public-read");
         fields.put("Content-Type", contentType);
         fields.put("x-amz-algorithm", ALGORITHM);
         fields.put("x-amz-credential", credential);
@@ -118,7 +123,7 @@ public class S3PresignedPostAdapter implements PictureStorageOutPort {
         return uploadUrl() + "/" + key;
     }
 
-    private byte[] signingKey(String dateStamp) {
+    private byte[] signingKey(String secretAccessKey, String dateStamp) {
         byte[] kSecret = ("AWS4" + secretAccessKey).getBytes(StandardCharsets.UTF_8);
         byte[] kDate = hmacSha256(kSecret, dateStamp);
         byte[] kRegion = hmacSha256(kDate, region);
