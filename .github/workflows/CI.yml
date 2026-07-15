@@ -157,13 +157,18 @@ jobs:
         run: aws eks update-kubeconfig --name ${{ vars.EKS_CLUSTER_NAME }} --region ${{ vars.AWS_REGION }}
 
       - name: Deploy (helm upgrade, gated by --wait)
+        # 15m, not 8m: Fargate schedules each new pod onto a fresh micro-VM and
+        # regularly logs 2-3 "Pod provisioning timed out (will retry)" cycles
+        # (~3m each) before the pod even starts pulling the image. An 8m wait
+        # made CI report failure on rollouts that then converged fine on their
+        # own (seen 2026-07-14). The app itself boots in ~1m once scheduled.
         run: |
           helm upgrade parches ./deploy \
             --install \
             --namespace patricia-app \
             --set image.repository=${{ vars.ECR_REGISTRY }}/${{ env.IMAGE_NAME }} \
             --set image.tag=${{ needs.push-image.outputs.image_tag }} \
-            --wait --timeout 8m
+            --wait --timeout 15m
 
       - name: Smoke check
         run: |

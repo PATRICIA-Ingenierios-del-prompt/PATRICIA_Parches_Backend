@@ -3,6 +3,7 @@ package ingprompt.patricia.parches.infrastructure.web.dto.response;
 import ingprompt.patricia.parches.domain.enums.ParcheCategory;
 import ingprompt.patricia.parches.domain.enums.ParcheStatus;
 import ingprompt.patricia.parches.domain.enums.Visibility;
+import ingprompt.patricia.parches.domain.model.CollaborationTools;
 import ingprompt.patricia.parches.domain.model.CommunicationChannels;
 import ingprompt.patricia.parches.domain.model.Parche;
 import lombok.AllArgsConstructor;
@@ -25,6 +26,11 @@ public class ParcheResponse {
     // parche.created -> communication.ready). Null until provisioning lands;
     // the frontend needs chatId to open the real STOMP chat channel.
     private CommunicationChannels communication;
+    // Canvas/parques ids provisioned by the Board and Parques MS (via
+    // parche.created -> board.ready / parques.ready). Null fields until each
+    // provisioning lands; the frontend needs canvasId for the live board
+    // socket and parquesId for the game.
+    private CollaborationTools collabs;
 
     public static ParcheResponse from(Parche parche) {
         return new ParcheResponse(
@@ -36,7 +42,8 @@ public class ParcheResponse {
                 parche.getMaxCapacity(),
                 parche.getMembers().size(),
                 parche.getPictureUrl(),
-                parche.getCommunication()
+                parche.getCommunication(),
+                parche.getCollabs()
         );
     }
 }
