@@ -21,28 +21,22 @@ replicaCount: 2
 
 serviceAccount:
   # Per-service IRSA role (module.eks.service_irsa["parche-core"]). The
-  # S3PresignedPostAdapter now resolves credentials via the SDK's default
-  # chain, so IRSA is the credential source in-cluster — no static keys.
-  # PENDING IN INFRA (blocked on partner's in-flight work there):
-  #   1. Attach an s3:PutObject policy scoped to
-  #      "${module.s3.bucket_arn}/parches/pictures/*" to this role
-  #      (mirror iam-users-s3.tf).
-  #   2. Verify the role's trust-policy `sub` matches this chart's
-  #      ServiceAccount name "parches" in namespace patricia-app — the module
-  #      keys the role by "parche-core", so the sub condition may expect
-  #      "parche-core" and needs the same fix Users got.
+  # S3PresignedPostAdapter resolves credentials via the SDK's default chain,
+  # so IRSA is the credential source in-cluster — no static keys.
+  # The chart's ServiceAccount is named "parche-core" (NOT "parches") because
+  # the role's trust policy binds system:serviceaccount:patricia-app:parche-core.
+  # s3:PutObject on parches/pictures/* is attached in Ulink_Infra's
+  # iam-parches-s3.tf (mirrors iam-users-s3.tf).
   roleArn: "arn:aws:iam::406103775000:role/patricia-dev-parche-core-irsa"
 
 config:
-  # Shared private uploads bucket (module.s3, Ulink_Infra). Objects are served
-  # via the uploads CloudFront distribution — set awsS3PublicBaseUrl to
-  # "https://<terraform output uploads_cloudfront_domain_name>" once infra
-  # work lands; until then the (blocked) S3 object URL is used and pictures
-  # won't render even though uploads succeed.
+  # Shared private uploads bucket (module.s3, Ulink_Infra). Objects are read
+  # through the uploads CloudFront distribution (same one Users serves
+  # profile photos from — see users-config's AWS_S3_PUBLIC_URL_BASE).
   awsS3Region: "us-east-1"
   awsS3Bucket: "patricia-dev-uploads-406103775000"
   awsS3Endpoint: ""
-  awsS3PublicBaseUrl: ""
+  awsS3PublicBaseUrl: "https://d26pt6qlbaevlh.cloudfront.net"
   parchePictureMaxBytes: "5242880"
   parchePictureUploadExpirySeconds: "300"
 
