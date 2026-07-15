@@ -24,11 +24,11 @@ public class ParcheEventPublisherAdapter implements ParcheEventPublisherOut {
     private final RabbitTemplate rabbitTemplate;
 
     @Override
-    public void publishParcheWasCreated(UUID parcheId, String name, UUID ownerId, Visibility visibility) {
+    public void publishParcheWasCreated(UUID parcheId, String name, UUID ownerId, Visibility visibility, ParcheCategory category) {
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.PARCHE_EXCHANGE,
                 RabbitMQConfig.PARCHE_CREATED_ROUTING_KEY,
-                new ParcheCreatedEvent(UUID.randomUUID(), parcheId, name, visibility, ownerId));
+                new ParcheCreatedEvent(UUID.randomUUID(), parcheId, name, visibility, ownerId, category));
     }
 
     @Override
