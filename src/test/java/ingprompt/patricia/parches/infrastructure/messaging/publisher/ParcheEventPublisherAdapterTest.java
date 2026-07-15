@@ -39,7 +39,7 @@ class ParcheEventPublisherAdapterTest {
 
     @Test
     void publishParcheWasCreated_sendsEnrichedEvent() {
-        adapter.publishParcheWasCreated(parcheId, "Salsa night", userId, ingprompt.patricia.parches.domain.enums.Visibility.PUBLIC);
+        adapter.publishParcheWasCreated(parcheId, "Salsa night", userId, ingprompt.patricia.parches.domain.enums.Visibility.PUBLIC, ParcheCategory.MUSIC);
 
         ArgumentCaptor<ParcheCreatedEvent> body = ArgumentCaptor.forClass(ParcheCreatedEvent.class);
         verify(rabbitTemplate).convertAndSend(eq(RabbitMQConfig.PARCHE_EXCHANGE), eq(RabbitMQConfig.PARCHE_CREATED_ROUTING_KEY), body.capture());
@@ -47,6 +47,7 @@ class ParcheEventPublisherAdapterTest {
         assertThat(body.getValue().getName()).isEqualTo("Salsa night");
         assertThat(body.getValue().getOwnerId()).isEqualTo(userId);
         assertThat(body.getValue().getVisibility()).isEqualTo(ingprompt.patricia.parches.domain.enums.Visibility.PUBLIC);
+        assertThat(body.getValue().getCategory()).isEqualTo(ParcheCategory.MUSIC);
         assertThat(body.getValue().getSourceEventId()).isNotNull();
     }
 

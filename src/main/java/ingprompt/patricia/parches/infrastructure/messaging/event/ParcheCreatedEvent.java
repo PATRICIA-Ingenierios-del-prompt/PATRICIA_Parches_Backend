@@ -1,5 +1,6 @@
 package ingprompt.patricia.parches.infrastructure.messaging.event;
 
+import ingprompt.patricia.parches.domain.enums.ParcheCategory;
 import ingprompt.patricia.parches.domain.enums.Visibility;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,4 +17,5 @@ public class ParcheCreatedEvent {
     private String name;
     private Visibility visibility;
     private UUID ownerId;
+    private ParcheCategory category;
 }
