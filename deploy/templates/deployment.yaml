@@ -12,7 +12,7 @@ spec:
     metadata:
       labels: { app: parches, patricia.io/sg-tier: standard }
     spec:
-      serviceAccountName: parches
+      serviceAccountName: parche-core
       containers:
         - name: parches
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
