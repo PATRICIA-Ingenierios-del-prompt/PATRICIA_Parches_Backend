@@ -192,6 +192,46 @@ class ParcheServiceTest {
     }
 
     @Test
+    void removeMember_selfLeave_removesAndPublishes() {
+        Parche parche = newParche(Visibility.PUBLIC, 10);
+        UUID member = UUID.randomUUID();
+        parche.addMember(member);
+        when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));
+        runActionInline();
+
+        service.removeMemberFromParche(parcheId, member, member);
+
+        assertThat(parche.hasMember(member)).isFalse();
+        verify(parcheRepository).save(parche);
+        verify(eventPublisher).publishParcheMemberExpelled(parcheId, member);
+    }
+
+    @Test
+    void removeMember_selfLeave_ownerCannotLeave() {
+        Parche parche = newParche(Visibility.PUBLIC, 10);
+        when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));
+        runActionInline();
+
+        assertThatThrownBy(() -> service.removeMemberFromParche(parcheId, ownerId, ownerId))
+                .isInstanceOf(CannotRemoveOwnerException.class);
+    }
+
+    @Test
+    void removeMember_nonOwnerCannotRemoveAnotherMember() {
+        Parche parche = newParche(Visibility.PUBLIC, 10);
+        UUID member = UUID.randomUUID();
+        UUID otherMember = UUID.randomUUID();
+        parche.addMember(member);
+        parche.addMember(otherMember);
+        when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));
+        runActionInline();
+
+        assertThatThrownBy(() -> service.removeMemberFromParche(parcheId, otherMember, member))
+                .isInstanceOf(NotParcheOwnerException.class);
+        assertThat(parche.hasMember(otherMember)).isTrue();
+    }
+
+    @Test
     void removeMember_whenNotPresent_throws() {
         Parche parche = newParche(Visibility.PUBLIC, 10);
         when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));

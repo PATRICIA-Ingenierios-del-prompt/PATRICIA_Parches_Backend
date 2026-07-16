@@ -88,9 +88,11 @@ public class ParcheService implements ManageParcheCase, ParcheProvisioningCase, 
 
     private void doRemoveMember(UUID parcheId, UUID memberId, UUID requesterId) {
         Parche parche = parcheRepository.findById(parcheId).orElseThrow(() -> new ParcheNotFoundException(parcheId));
-        if (!parche.isOwnedBy(requesterId)) {
+        boolean selfLeave = memberId.equals(requesterId);
+        if (!selfLeave && !parche.isOwnedBy(requesterId)) {
             throw new NotParcheOwnerException(parcheId, requesterId);
         }
+
         if (parche.isOwnedBy(memberId)) {
             throw new CannotRemoveOwnerException(parcheId);
         }
