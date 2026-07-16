@@ -27,16 +27,16 @@ serviceAccount:
   # the role's trust policy binds system:serviceaccount:patricia-app:parche-core.
   # s3:PutObject on parches/pictures/* is attached in Ulink_Infra's
   # iam-parches-s3.tf (mirrors iam-users-s3.tf).
-  roleArn: "arn:aws:iam::406103775000:role/patricia-dev-parche-core-irsa"
+  roleArn: "arn:aws:iam::188701360691:role/patricia-dev-parche-core-irsa"
 
 config:
   # Shared private uploads bucket (module.s3, Ulink_Infra). Objects are read
   # through the uploads CloudFront distribution (same one Users serves
   # profile photos from — see users-config's AWS_S3_PUBLIC_URL_BASE).
   awsS3Region: "us-east-1"
-  awsS3Bucket: "patricia-dev-uploads-406103775000"
+  awsS3Bucket: "patricia-dev-uploads-188701360691"
   awsS3Endpoint: ""
-  awsS3PublicBaseUrl: "https://d26pt6qlbaevlh.cloudfront.net"
+  awsS3PublicBaseUrl: "https://d1uaykdrxdyy3x.cloudfront.net"
   parchePictureMaxBytes: "5242880"
   parchePictureUploadExpirySeconds: "300"
 
