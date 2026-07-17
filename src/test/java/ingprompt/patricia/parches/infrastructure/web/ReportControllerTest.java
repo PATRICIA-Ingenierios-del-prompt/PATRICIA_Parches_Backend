@@ -2,6 +2,7 @@ package ingprompt.patricia.parches.infrastructure.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ingprompt.patricia.parches.application.port.in.ReportParcheMemberCase;
+import ingprompt.patricia.parches.domain.enums.ReportStatus;
 import ingprompt.patricia.parches.domain.enums.ReportType;
 import ingprompt.patricia.parches.domain.exception.InvalidReportException;
 import ingprompt.patricia.parches.domain.exception.UnauthorizedReportAccessException;
@@ -45,16 +46,18 @@ class ReportControllerTest {
         r.setReportedId(reportedId);
         r.setReportType(ReportType.SPAM);
         r.setDescription("molesta");
+        r.setReportedUserName("Reported User");
+        r.setParcheName("Parche test");
         return r;
     }
 
     private ParcheReportMember sampleReport() {
-        return new ParcheReportMember(reportId, parcheId, creatorId, reportedId, ReportType.SPAM, "molesta", Instant.now());
+        return new ParcheReportMember(reportId, parcheId, creatorId, reportedId, ReportType.SPAM, "molesta", "Reported User", "Parche test", ReportStatus.PENDING, Instant.now(), null);
     }
 
     @Test
     void createReport_returns200_andBody() throws Exception {
-        when(reportCase.reportMember(eq(parcheId), eq(creatorId), eq(reportedId), eq(ReportType.SPAM), eq("molesta")))
+        when(reportCase.reportMember(eq(parcheId), eq(creatorId), eq(reportedId), eq(ReportType.SPAM), eq("molesta"), eq("Reported User"), eq("Parche test")))
                 .thenReturn(sampleReport());
 
         mockMvc.perform(post("/api/parches/{parcheId}/reports", parcheId)
@@ -66,12 +69,13 @@ class ReportControllerTest {
                 .andExpect(jsonPath("$.parcheId").value(parcheId.toString()))
                 .andExpect(jsonPath("$.creatorId").value(creatorId.toString()))
                 .andExpect(jsonPath("$.reportedId").value(reportedId.toString()))
-                .andExpect(jsonPath("$.reportType").value("SPAM"));
+                .andExpect(jsonPath("$.reportType").value("SPAM"))
+                .andExpect(jsonPath("$.status").value("PENDING"));
     }
 
     @Test
     void createReport_selfReport_returns400() throws Exception {
-        when(reportCase.reportMember(any(), any(), any(), any(), any()))
+        when(reportCase.reportMember(any(), any(), any(), any(), any(), any(), any()))
                 .thenThrow(new InvalidReportException("A user cannot report themselves"));
 
         mockMvc.perform(post("/api/parches/{parcheId}/reports", parcheId)

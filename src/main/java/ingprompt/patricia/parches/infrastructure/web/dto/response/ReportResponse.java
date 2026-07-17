@@ -1,5 +1,6 @@
 package ingprompt.patricia.parches.infrastructure.web.dto.response;
 
+import ingprompt.patricia.parches.domain.enums.ReportStatus;
 import ingprompt.patricia.parches.domain.enums.ReportType;
 import ingprompt.patricia.parches.domain.model.ParcheReportMember;
 import lombok.AllArgsConstructor;
@@ -17,7 +18,11 @@ public class ReportResponse {
     private UUID reportedId;
     private ReportType reportType;
     private String description;
+    private String reportedUserName;
+    private String parcheName;
+    private ReportStatus status;
     private Instant createdAt;
+    private Instant resolvedAt;
 
     public static ReportResponse from(ParcheReportMember report) {
         return new ReportResponse(
@@ -27,7 +32,11 @@ public class ReportResponse {
                 report.getReportedId(),
                 report.getReportType(),
                 report.getDescription(),
-                report.getCreatedAt()
+                report.getReportedUserName(),
+                report.getParcheName(),
+                report.getStatus(),
+                report.getCreatedAt(),
+                report.getResolvedAt()
         );
     }
 }

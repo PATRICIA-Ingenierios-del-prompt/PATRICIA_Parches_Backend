@@ -1,6 +1,7 @@
 package ingprompt.patricia.parches.infrastructure.persistence.repository;
 
 import ingprompt.patricia.parches.application.port.out.ReportRepositoryOutPort;
+import ingprompt.patricia.parches.domain.enums.ReportStatus;
 import ingprompt.patricia.parches.domain.model.ParcheReportMember;
 import ingprompt.patricia.parches.infrastructure.persistence.postgre.ReportRepository;
 import ingprompt.patricia.parches.infrastructure.persistence.repository.mapper.ReportMapper;
@@ -30,5 +31,15 @@ public class ReportRepositoryAdapter implements ReportRepositoryOutPort {
     @Override
     public Page<ParcheReportMember> findByParcheId(UUID parcheId, Pageable pageable) {
         return reportRepository.findByParcheId(parcheId, pageable).map(ReportMapper::toDomain);
+    }
+
+    @Override
+    public Page<ParcheReportMember> findByStatus(ReportStatus status, Pageable pageable) {
+        return reportRepository.findByStatusOrderByCreatedAtDesc(status, pageable).map(ReportMapper::toDomain);
+    }
+
+    @Override
+    public Page<ParcheReportMember> findAll(Pageable pageable) {
+        return reportRepository.findAllByOrderByCreatedAtDesc(pageable).map(ReportMapper::toDomain);
     }
 }

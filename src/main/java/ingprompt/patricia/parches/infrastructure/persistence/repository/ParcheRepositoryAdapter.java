@@ -35,6 +35,11 @@ public class ParcheRepositoryAdapter implements ParcheRepositoryOutPort {
     }
 
     @Override
+    public long count() {
+        return postgreRepository.count();
+    }
+
+    @Override
     public Page<Parche> findByCategory(ParcheCategory category, Pageable pageable) {
         return postgreRepository.findByCategory(category, pageable).map(ParcheMapper::toDomain);
     }

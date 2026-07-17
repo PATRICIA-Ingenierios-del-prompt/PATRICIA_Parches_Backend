@@ -12,4 +12,6 @@ public class CreateReportRequest {
     private UUID reportedId;
     private ReportType reportType;
     private String description;
+    private String reportedUserName;
+    private String parcheName;
 }

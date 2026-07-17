@@ -21,7 +21,7 @@ public class ReportController {
 
     @PostMapping
     public ResponseEntity<ReportResponse> createReport(@PathVariable UUID parcheId, @RequestBody CreateReportRequest request, @RequestHeader("X-User-Id") UUID creatorId) {
-        ParcheReportMember report = reportCase.reportMember(parcheId, creatorId, request.getReportedId(), request.getReportType(), request.getDescription());
+        ParcheReportMember report = reportCase.reportMember(parcheId, creatorId, request.getReportedId(), request.getReportType(), request.getDescription(), request.getReportedUserName(), request.getParcheName());
         return ResponseEntity.ok(ReportResponse.from(report));
     }
 
