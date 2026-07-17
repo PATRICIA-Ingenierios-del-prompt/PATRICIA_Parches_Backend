@@ -3,6 +3,7 @@ package ingprompt.patricia.parches.application.service;
 import ingprompt.patricia.parches.application.port.out.ParcheRepositoryOutPort;
 import ingprompt.patricia.parches.application.port.out.ReportRepositoryOutPort;
 import ingprompt.patricia.parches.domain.enums.ParcheCategory;
+import ingprompt.patricia.parches.domain.enums.ReportStatus;
 import ingprompt.patricia.parches.domain.enums.ReportType;
 import ingprompt.patricia.parches.domain.enums.Visibility;
 import ingprompt.patricia.parches.domain.exception.InvalidReportException;
@@ -70,7 +71,7 @@ class ReportServiceTest {
         when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));
         Instant beforeCall = Instant.now().minusMillis(1);
 
-        ParcheReportMember result = service.reportMember(parcheId, creatorId, reportedId, ReportType.SPAM, "molesta");
+        ParcheReportMember result = service.reportMember(parcheId, creatorId, reportedId, ReportType.SPAM, "molesta", "Reported User", "Parche test");
 
         ArgumentCaptor<ParcheReportMember> captor = ArgumentCaptor.forClass(ParcheReportMember.class);
         verify(reportRepository).save(captor.capture());
@@ -82,12 +83,26 @@ class ReportServiceTest {
         assertThat(saved.getReportedId()).isEqualTo(reportedId);
         assertThat(saved.getReportType()).isEqualTo(ReportType.SPAM);
         assertThat(saved.getDescription()).isEqualTo("molesta");
+        assertThat(saved.getReportedUserName()).isEqualTo("Reported User");
+        assertThat(saved.getParcheName()).isEqualTo("Parche test");
+        assertThat(saved.getStatus()).isEqualTo(ReportStatus.PENDING);
         assertThat(saved.getCreatedAt()).isAfterOrEqualTo(beforeCall);
     }
 
     @Test
+    void reportMember_fallsBackToParcheName_whenNotProvided() {
+        when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));
+
+        service.reportMember(parcheId, creatorId, reportedId, ReportType.SPAM, "molesta", null, null);
+
+        ArgumentCaptor<ParcheReportMember> captor = ArgumentCaptor.forClass(ParcheReportMember.class);
+        verify(reportRepository).save(captor.capture());
+        assertThat(captor.getValue().getParcheName()).isEqualTo("Salsa night");
+    }
+
+    @Test
     void reportMember_selfReport_throws() {
-        assertThatThrownBy(() -> service.reportMember(parcheId, creatorId, creatorId, ReportType.SPAM, null))
+        assertThatThrownBy(() -> service.reportMember(parcheId, creatorId, creatorId, ReportType.SPAM, null, null, null))
                 .isInstanceOf(InvalidReportException.class);
         verify(reportRepository, never()).save(any());
         verify(parcheRepository, never()).findById(any());
@@ -96,7 +111,7 @@ class ReportServiceTest {
     @Test
     void reportMember_parcheNotFound_throws() {
         when(parcheRepository.findById(parcheId)).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> service.reportMember(parcheId, creatorId, reportedId, ReportType.SPAM, null))
+        assertThatThrownBy(() -> service.reportMember(parcheId, creatorId, reportedId, ReportType.SPAM, null, null, null))
                 .isInstanceOf(ParcheNotFoundException.class);
         verify(reportRepository, never()).save(any());
     }
@@ -104,7 +119,7 @@ class ReportServiceTest {
     @Test
     void reportMember_creatorNotAMember_throws() {
         when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));
-        assertThatThrownBy(() -> service.reportMember(parcheId, randomUserId, reportedId, ReportType.SPAM, null))
+        assertThatThrownBy(() -> service.reportMember(parcheId, randomUserId, reportedId, ReportType.SPAM, null, null, null))
                 .isInstanceOf(InvalidReportException.class);
         verify(reportRepository, never()).save(any());
     }
@@ -112,7 +127,7 @@ class ReportServiceTest {
     @Test
     void reportMember_reportedNotAMember_throws() {
         when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));
-        assertThatThrownBy(() -> service.reportMember(parcheId, creatorId, randomUserId, ReportType.SPAM, null))
+        assertThatThrownBy(() -> service.reportMember(parcheId, creatorId, randomUserId, ReportType.SPAM, null, null, null))
                 .isInstanceOf(InvalidReportException.class);
         verify(reportRepository, never()).save(any());
     }
@@ -171,8 +186,7 @@ class ReportServiceTest {
     @Test
     void findById_asOwner_returnsReport() {
         UUID reportId = UUID.randomUUID();
-        ParcheReportMember report = new ParcheReportMember(reportId, parcheId, creatorId, reportedId,
-                ReportType.SPAM, "x", Instant.now());
+        ParcheReportMember report = sampleReport(reportId);
         when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));
         when(reportRepository.findById(reportId)).thenReturn(Optional.of(report));
 
@@ -184,8 +198,7 @@ class ReportServiceTest {
     @Test
     void findById_asAdmin_returnsReport() {
         UUID reportId = UUID.randomUUID();
-        ParcheReportMember report = new ParcheReportMember(reportId, parcheId, creatorId, reportedId,
-                ReportType.SPAM, "x", Instant.now());
+        ParcheReportMember report = sampleReport(reportId);
         when(reportRepository.findById(reportId)).thenReturn(Optional.of(report));
 
         ParcheReportMember result = service.findById(parcheId, reportId, randomUserId, "ADMIN");
@@ -207,7 +220,7 @@ class ReportServiceTest {
         UUID reportId = UUID.randomUUID();
         UUID otherParcheId = UUID.randomUUID();
         ParcheReportMember report = new ParcheReportMember(reportId, otherParcheId, creatorId, reportedId,
-                ReportType.SPAM, "x", Instant.now());
+                ReportType.SPAM, "x", "Reported", "Other", ReportStatus.PENDING, Instant.now(), null);
         when(parcheRepository.findById(parcheId)).thenReturn(Optional.of(parche));
         when(reportRepository.findById(reportId)).thenReturn(Optional.of(report));
 
@@ -224,8 +237,61 @@ class ReportServiceTest {
                 .isInstanceOf(InvalidReportException.class);
     }
 
+    // ---------- admin list / resolve -------------------------------------
+
+    @Test
+    void findAll_asAdmin_returnsAll() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<ParcheReportMember> page = new PageImpl<>(List.of(sampleReport()));
+        when(reportRepository.findAll(pageable)).thenReturn(page);
+
+        Page<ParcheReportMember> result = service.findAll(null, "ADMIN", pageable);
+
+        assertThat(result).isSameAs(page);
+    }
+
+    @Test
+    void findAll_asAdmin_withStatus_filtersByStatus() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<ParcheReportMember> page = new PageImpl<>(List.of(sampleReport()));
+        when(reportRepository.findByStatus(ReportStatus.PENDING, pageable)).thenReturn(page);
+
+        Page<ParcheReportMember> result = service.findAll(ReportStatus.PENDING, "ADMIN", pageable);
+
+        assertThat(result).isSameAs(page);
+    }
+
+    @Test
+    void findAll_nonAdmin_throws() {
+        assertThatThrownBy(() -> service.findAll(null, "STUDENT", PageRequest.of(0, 10)))
+                .isInstanceOf(UnauthorizedReportAccessException.class);
+    }
+
+    @Test
+    void resolveReport_asAdmin_marksResolved() {
+        UUID reportId = UUID.randomUUID();
+        ParcheReportMember report = sampleReport(reportId);
+        when(reportRepository.findById(reportId)).thenReturn(Optional.of(report));
+
+        ParcheReportMember result = service.resolveReport(reportId, "ADMIN");
+
+        assertThat(result.getStatus()).isEqualTo(ReportStatus.RESOLVED);
+        assertThat(result.getResolvedAt()).isNotNull();
+        verify(reportRepository).save(report);
+    }
+
+    @Test
+    void resolveReport_nonAdmin_throws() {
+        assertThatThrownBy(() -> service.resolveReport(UUID.randomUUID(), "STUDENT"))
+                .isInstanceOf(UnauthorizedReportAccessException.class);
+    }
+
     private ParcheReportMember sampleReport() {
-        return new ParcheReportMember(UUID.randomUUID(), parcheId, creatorId, reportedId,
-                ReportType.SPAM, "x", Instant.now());
+        return sampleReport(UUID.randomUUID());
+    }
+
+    private ParcheReportMember sampleReport(UUID reportId) {
+        return new ParcheReportMember(reportId, parcheId, creatorId, reportedId,
+                ReportType.SPAM, "x", "Reported User", "Salsa night", ReportStatus.PENDING, Instant.now(), null);
     }
 }

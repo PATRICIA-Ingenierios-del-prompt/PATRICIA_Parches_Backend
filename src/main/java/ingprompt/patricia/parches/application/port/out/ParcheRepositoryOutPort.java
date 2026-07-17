@@ -13,6 +13,7 @@ public interface ParcheRepositoryOutPort {
     void save(Parche parche);
     void delete(Parche parche);
     Optional<Parche> findById(UUID parcheId);
+    long count();
 
     Page<Parche> findByCategory(ParcheCategory category, Pageable pageable);
     Page<Parche> findByVisibility(Visibility visibility, Pageable pageable);

@@ -3,6 +3,7 @@ package ingprompt.patricia.parches.application.service;
 import ingprompt.patricia.parches.application.port.in.ReportParcheMemberCase;
 import ingprompt.patricia.parches.application.port.out.ParcheRepositoryOutPort;
 import ingprompt.patricia.parches.application.port.out.ReportRepositoryOutPort;
+import ingprompt.patricia.parches.domain.enums.ReportStatus;
 import ingprompt.patricia.parches.domain.enums.ReportType;
 import ingprompt.patricia.parches.domain.exception.InvalidReportException;
 import ingprompt.patricia.parches.domain.exception.ParcheNotFoundException;
@@ -19,7 +20,6 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 @AllArgsConstructor
@@ -30,7 +30,7 @@ public class ReportService implements ReportParcheMemberCase {
     private final ParcheRepositoryOutPort parcheRepository;
 
     @Override
-    public ParcheReportMember reportMember(UUID parcheId, UUID creatorId, UUID reportedId, ReportType reportType, String description) {
+    public ParcheReportMember reportMember(UUID parcheId, UUID creatorId, UUID reportedId, ReportType reportType, String description, String reportedUserName, String parcheName) {
         if (creatorId.equals(reportedId)) {
             throw new InvalidReportException("A user cannot report themselves");
         }
@@ -42,7 +42,10 @@ public class ReportService implements ReportParcheMemberCase {
             throw new InvalidReportException("Reported user " + reportedId + " is not a member of parche " + parcheId);
         }
 
-        ParcheReportMember report = ParcheReportMember.of(parcheId, creatorId, reportedId, reportType, description);
+        String finalReportedUserName = reportedUserName != null && !reportedUserName.isBlank() ? reportedUserName : reportedId.toString();
+        String finalParcheName = parcheName != null && !parcheName.isBlank() ? parcheName : parche.getName();
+
+        ParcheReportMember report = ParcheReportMember.of(parcheId, creatorId, reportedId, reportType, description, finalReportedUserName, finalParcheName);
         reportRepository.save(report);
         log.info("Report {} created on parche {} by {} against {}", report.getReportId(), parcheId, creatorId, reportedId);
         return report;
@@ -62,6 +65,30 @@ public class ReportService implements ReportParcheMemberCase {
     public Page<ParcheReportMember> findByParcheId(UUID parcheId, UUID requesterId, String roles, Pageable pageable) {
         authorizeRead(parcheId, requesterId, roles);
         return reportRepository.findByParcheId(parcheId, pageable);
+    }
+
+    @Override
+    public Page<ParcheReportMember> findAll(ReportStatus status, String roles, Pageable pageable) {
+        if (!hasAuthorizedRole(roles)) {
+            throw new UnauthorizedReportAccessException(null, roles);
+        }
+        if (status != null) {
+            return reportRepository.findByStatus(status, pageable);
+        }
+        return reportRepository.findAll(pageable);
+    }
+
+    @Override
+    public ParcheReportMember resolveReport(UUID reportId, String roles) {
+        if (!hasAuthorizedRole(roles)) {
+            throw new UnauthorizedReportAccessException(null, roles);
+        }
+        ParcheReportMember report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new InvalidReportException("Report " + reportId + " not found"));
+        report.resolve();
+        reportRepository.save(report);
+        log.info("Report {} resolved by admin", reportId);
+        return report;
     }
 
     private void authorizeRead(UUID parcheId, UUID requesterId, String roles) {

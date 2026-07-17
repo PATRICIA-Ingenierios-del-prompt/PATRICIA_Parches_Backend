@@ -16,7 +16,11 @@ public final class ReportMapper {
         entity.setReportedId(report.getReportedId());
         entity.setReportType(report.getReportType());
         entity.setDescription(report.getDescription());
+        entity.setReportedUserName(report.getReportedUserName());
+        entity.setParcheName(report.getParcheName());
+        entity.setStatus(report.getStatus());
         entity.setCreatedAt(report.getCreatedAt());
+        entity.setResolvedAt(report.getResolvedAt());
         return entity;
     }
 
@@ -28,7 +32,11 @@ public final class ReportMapper {
                 entity.getReportedId(),
                 entity.getReportType(),
                 entity.getDescription(),
-                entity.getCreatedAt()
+                entity.getReportedUserName(),
+                entity.getParcheName(),
+                entity.getStatus(),
+                entity.getCreatedAt(),
+                entity.getResolvedAt()
         );
     }
 }

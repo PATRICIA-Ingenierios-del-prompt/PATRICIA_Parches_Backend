@@ -1,5 +1,6 @@
 package ingprompt.patricia.parches.infrastructure.persistence.entity;
 
+import ingprompt.patricia.parches.domain.enums.ReportStatus;
 import ingprompt.patricia.parches.domain.enums.ReportType;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -30,6 +31,19 @@ public class ReportEntity {
     @Column(length = 1000)
     private String description;
 
+    @Column(name = "reported_user_name")
+    private String reportedUserName;
+
+    @Column(name = "parche_name")
+    private String parcheName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ReportStatus status;
+
     @Column(nullable = false)
     private Instant createdAt;
+
+    @Column
+    private Instant resolvedAt;
 }
